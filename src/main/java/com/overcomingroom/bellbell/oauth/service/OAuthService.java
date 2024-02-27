@@ -78,7 +78,7 @@ public class OAuthService {
     JSONObject userInfoData = new JSONObject(userInfoResponse.getBody());
     String email = userInfoData.getJSONObject("kakao_account").get("email").toString();
     String nickname = userInfoData.getJSONObject("properties").get("nickname").toString();
-    KakaoUserInfo kakaoUserInfo = new KakaoUserInfo(email, nickname);
+    KakaoUserInfo kakaoUserInfo = new KakaoUserInfo(nickname, email);
 
     log.info("email: {}", email);
     log.info("nickname: {}", nickname);
