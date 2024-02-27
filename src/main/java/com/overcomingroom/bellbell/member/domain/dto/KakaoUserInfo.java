@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class KakaoUserInfo {
+
   private String nickname; // 카카오 프로필 닉네임
   private String email; // 카카오 프로필 이메일
 
