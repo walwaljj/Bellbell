@@ -32,7 +32,7 @@ public class OAuthController {
             .responseCode(responseCode)
             .code(responseCode.getCode())
             .message(responseCode.getMessage())
-            .data(oAuthService.loginWithKakao(code).toString())
+            .data(oAuthService.loginWithKakao(code))
             .build()
     );
   }

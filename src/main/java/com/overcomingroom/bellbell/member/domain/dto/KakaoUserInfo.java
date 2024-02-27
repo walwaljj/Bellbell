@@ -29,11 +29,4 @@ public class KakaoUserInfo {
         .build();
   }
 
-  @Override
-  public String toString() {
-    return "KakaoUserInfo{" +
-        "nickname='" + nickname + '\'' +
-        ", email='" + email + '\'' +
-        '}';
-  }
 }
