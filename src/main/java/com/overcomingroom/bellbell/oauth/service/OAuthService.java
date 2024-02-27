@@ -1,5 +1,8 @@
 package com.overcomingroom.bellbell.oauth.service;
 
+import com.overcomingroom.bellbell.member.domain.dto.KakaoUserInfo;
+import com.overcomingroom.bellbell.member.domain.service.MemberService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,7 +17,10 @@ import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class OAuthService {
+
+  private final MemberService memberService;
 
   @Value("${spring.security.oauth2.client.registration.kakao.client-id}")
   private String clientId;
@@ -30,10 +36,12 @@ public class OAuthService {
   /**
    * 카카오 OAuth 콜백 처리 메서드입니다.
    *
-   * @param code 카카오에서 전달받은 인가 코드
-   * @return 카카오로부터 받은 액세스 토큰 및 관련 정보의 응답
+   * @param code 카카오를 통해 클라이언트 측에서 전달받은 인가 코드
+   * @return 카카오로부터 받은 유저 정보의 응답
+   *
+   * TODO: AccessToken 및 RefreshToken Redis 에 저장
    */
-  public ResponseEntity<?> loginWithKakao(String code) {
+  public KakaoUserInfo loginWithKakao(String code) {
 
     log.info("code: " + code);
 
@@ -50,8 +58,10 @@ public class OAuthService {
     ResponseEntity<String> tokenResponse = restTemplate.postForEntity(tokenUrl, requestBody, String.class);
     JSONObject jsonData = new JSONObject(tokenResponse.getBody());
     String accessToken = jsonData.get("access_token").toString();
+    String refreshToken = jsonData.get("refresh_token").toString();
 
     log.info("Access token: " + accessToken);
+    log.info("Refresh token: " + refreshToken);
 
     // 받은 액세스 토큰을 사용하여 사용자 정보 요청
     HttpHeaders headers = new HttpHeaders();
@@ -64,9 +74,23 @@ public class OAuthService {
     String userInfo = userInfoResponse.getBody();
 
     log.info("UserInfo: " + userInfo);
-    // 여기서 userInfo를 파싱하여 필요한 작업 수행
-    // 예를 들어, 사용자 정보를 데이터베이스에 저장하거나 로그인 처리 등을 수행할 수 있습니다.
 
-    return ResponseEntity.ok(userInfo);
+    JSONObject userInfoData = new JSONObject(userInfoResponse.getBody());
+    String email = userInfoData.getJSONObject("kakao_account").get("email").toString();
+    String nickname = userInfoData.getJSONObject("properties").get("nickname").toString();
+    KakaoUserInfo kakaoUserInfo = new KakaoUserInfo(email, nickname);
+
+    log.info("email: {}", email);
+    log.info("nickname: {}", nickname);
+
+    // 저장된 사용자가 아니면 저장
+    try {
+      memberService.loadKakaoUser(kakaoUserInfo);
+    } catch (Exception e) {
+      log.info("회원이 존재하지 않습니다.\n회원가입 진행");
+      memberService.saveKakaoUser(kakaoUserInfo);
+    }
+
+    return kakaoUserInfo;
   }
 }

@@ -18,7 +18,7 @@ public class KakaoUserInfo {
   private String email; // 카카오 프로필 이메일
 
   /**
-   * Dto 객체를 Member Entity로 변환
+   * Dto 객체를 Member Entity 로 변환
    *
    * @return Member Entity
    */
@@ -27,5 +27,13 @@ public class KakaoUserInfo {
         .email(this.email)
         .nickname(this.nickname)
         .build();
+  }
+
+  @Override
+  public String toString() {
+    return "KakaoUserInfo{" +
+        "nickname='" + nickname + '\'' +
+        ", email='" + email + '\'' +
+        '}';
   }
 }
