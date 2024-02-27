@@ -6,6 +6,9 @@ import org.springframework.http.HttpStatus;
 @Getter
 public enum ErrorCode {
 
+    // OAuth
+    LOGIN_ERROR(HttpStatus.BAD_REQUEST, "로그인 오류"),
+
     // Weather
     LOCATION_INFORMATION_NOT_FOUND(HttpStatus.NOT_FOUND, "위치 정보를 찾을 수 없습니다.");
 

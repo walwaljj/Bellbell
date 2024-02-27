@@ -9,6 +9,9 @@ import org.springframework.http.ResponseEntity;
 @ToString
 public enum ResponseCode {
 
+    // OAuth
+    LOGIN_SUCCESSFUL(HttpStatus.OK, "200", "로그인 성공"),
+
     // Weather
     LOCATION_INFORMATION_SEARCH_SUCCESSFUL(HttpStatus.OK, "200", "위치 정보 조회 성공");
 
