@@ -89,8 +89,8 @@ public class MemberService {
    * @param accessToken 클라이언트로부터 받아온 액세스 토큰
    * @return Member 정보가 저장된 DTO
    */
-  public KakaoUserInfo getMemberInfo(ResponseToken accessToken) {
-    Member member = loadMember(getKakaoUserInfo(accessToken)).orElseThrow(
+  public KakaoUserInfo getMemberInfo(String accessToken) {
+    Member member = loadMember(getKakaoUserInfo(new ResponseToken(accessToken))).orElseThrow(
         () -> new CustomException(ErrorCode.MEMBER_INVALID));
     return new KakaoUserInfo(member.getNickname(), member.getEmail());
   }

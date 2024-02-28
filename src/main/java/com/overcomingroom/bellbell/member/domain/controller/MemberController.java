@@ -1,13 +1,12 @@
 package com.overcomingroom.bellbell.member.domain.controller;
 
 import com.overcomingroom.bellbell.member.domain.service.MemberService;
-import com.overcomingroom.bellbell.oauth.dto.ResponseToken;
 import com.overcomingroom.bellbell.response.ResResult;
 import com.overcomingroom.bellbell.response.ResponseCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -25,8 +24,8 @@ public class MemberController {
    * @param accessToken 클라이언트를 통해 전달받은 액세스 토큰
    * @return 멤버 정보
    */
-  @PostMapping("/v1/member")
-  public ResponseEntity<ResResult> getUserInfo(@RequestBody ResponseToken accessToken) {
+  @GetMapping("/v1/member")
+  public ResponseEntity<ResResult> getUserInfo(@RequestHeader("Authorization") String accessToken) {
     ResponseCode responseCode = ResponseCode.MEMBER_INFO_GET_SUCCESSFUL;
     return ResponseEntity.ok(
         ResResult.builder()
