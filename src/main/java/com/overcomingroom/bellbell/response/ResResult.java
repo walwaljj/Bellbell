@@ -12,18 +12,18 @@ import lombok.Getter;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ResResult<T> {
 
-    ResponseCode responseCode;
-    String code;
-    String message;
-    T data;
+  ResponseCode responseCode;
+  String code;
+  String message;
+  T data;
 
-    @Override
-    public String toString() {
-        return "ResResult{" +
-                "responseCode=" + responseCode +
-                ", code='" + code + '\'' +
-                ", message='" + message + '\'' +
-                ", data=" + data +
-                '}';
-    }
+  @Override
+  public String toString() {
+    return "ResResult{" +
+        "responseCode=" + responseCode +
+        ", code='" + code + '\'' +
+        ", message='" + message + '\'' +
+        ", data=" + data +
+        '}';
+  }
 }

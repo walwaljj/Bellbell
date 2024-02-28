@@ -22,7 +22,7 @@ public class OAuthController {
    * 카카오 OAuth 콜백 처리 메서드입니다.
    *
    * @param code 카카오를 통해 클라이언트 측에서 전달받은 인가 코드
-   * @return 카카오로부터 받은 유저 정보의 응답
+   * @return 카카오로부터 받은 AccessToken
    */
   @GetMapping("/v1/login")
   public ResponseEntity<ResResult> loginWithKakao(@RequestParam String code) {

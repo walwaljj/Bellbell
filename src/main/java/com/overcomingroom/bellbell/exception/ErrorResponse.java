@@ -12,15 +12,15 @@ import org.springframework.http.HttpStatus;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponse {
 
-    private ErrorCode errorCode;
-    private String code;
-    private String message;
-    private HttpStatus httpStatus;
+  private ErrorCode errorCode;
+  private String code;
+  private String message;
+  private HttpStatus httpStatus;
 
-    public ErrorResponse(ErrorCode errorCode) {
-        this.code = errorCode.getStatus().toString();
-        this.errorCode = errorCode;
-        this.httpStatus = errorCode.getStatus();
-        this.message = errorCode.getMsg();
-    }
+  public ErrorResponse(ErrorCode errorCode) {
+    this.code = errorCode.getStatus().toString();
+    this.errorCode = errorCode;
+    this.httpStatus = errorCode.getStatus();
+    this.message = errorCode.getMsg();
+  }
 }

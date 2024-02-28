@@ -1,14 +1,15 @@
 package com.overcomingroom.bellbell.oauth.service;
 
+import com.overcomingroom.bellbell.exception.CustomException;
+import com.overcomingroom.bellbell.exception.ErrorCode;
 import com.overcomingroom.bellbell.member.domain.dto.KakaoUserInfo;
 import com.overcomingroom.bellbell.member.domain.service.MemberService;
+import com.overcomingroom.bellbell.oauth.dto.ResponseToken;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.RequestEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -30,18 +31,17 @@ public class OAuthService {
   private String redirectUri;
   @Value("${spring.security.oauth2.client.provider.kakao.token-uri}")
   private String tokenUrl;
-  @Value("${spring.security.oauth2.client.provider.kakao.user-info-uri}")
-  private String userInfoUrl;
+
 
   /**
    * 카카오 OAuth 콜백 처리 메서드입니다.
    *
    * @param code 카카오를 통해 클라이언트 측에서 전달받은 인가 코드
-   * @return 카카오로부터 받은 유저 정보의 응답
-   *
+   * @return 카카오로부터 받은 AccessToken
+   * <p>
    * TODO: AccessToken 및 RefreshToken Redis 에 저장
    */
-  public KakaoUserInfo loginWithKakao(String code) {
+  public ResponseToken loginWithKakao(String code) {
 
     log.info("code: " + code);
 
@@ -55,42 +55,24 @@ public class OAuthService {
 
     // RestTemplate을 사용하여 액세스 토큰 요청
     RestTemplate restTemplate = new RestTemplate();
-    ResponseEntity<String> tokenResponse = restTemplate.postForEntity(tokenUrl, requestBody, String.class);
+    ResponseEntity<String> tokenResponse = restTemplate.postForEntity(tokenUrl, requestBody,
+        String.class);
+    if (!tokenResponse.getStatusCode().equals(HttpStatus.OK)) {
+      throw new CustomException(ErrorCode.LOGIN_ERROR);
+    }
     JSONObject jsonData = new JSONObject(tokenResponse.getBody());
     String accessToken = jsonData.get("access_token").toString();
     String refreshToken = jsonData.get("refresh_token").toString();
-
     log.info("Access token: " + accessToken);
     log.info("Refresh token: " + refreshToken);
 
-    // 받은 액세스 토큰을 사용하여 사용자 정보 요청
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-    headers.setBearerAuth(accessToken);
-    RequestEntity<?> requestEntity = RequestEntity.get(userInfoUrl).headers(headers).build();
-
-    // 사용자 정보 요청
-    ResponseEntity<String> userInfoResponse = restTemplate.exchange(requestEntity, String.class);
-    String userInfo = userInfoResponse.getBody();
-
-    log.info("UserInfo: " + userInfo);
-
-    JSONObject userInfoData = new JSONObject(userInfoResponse.getBody());
-    String email = userInfoData.getJSONObject("kakao_account").get("email").toString();
-    String nickname = userInfoData.getJSONObject("properties").get("nickname").toString();
-    KakaoUserInfo kakaoUserInfo = new KakaoUserInfo(nickname, email);
-
-    log.info("email: {}", email);
-    log.info("nickname: {}", nickname);
+    KakaoUserInfo kakaoUserInfo = memberService.getKakaoUserInfo(new ResponseToken(accessToken));
 
     // 저장된 사용자가 아니면 저장
-    try {
-      memberService.loadKakaoUser(kakaoUserInfo);
-    } catch (Exception e) {
-      log.info("회원이 존재하지 않습니다.\n회원가입 진행");
-      memberService.saveKakaoUser(kakaoUserInfo);
+    if (memberService.loadMember(kakaoUserInfo).isEmpty()) {
+      memberService.saveMember(kakaoUserInfo);
     }
 
-    return kakaoUserInfo;
+    return new ResponseToken(accessToken);
   }
 }
