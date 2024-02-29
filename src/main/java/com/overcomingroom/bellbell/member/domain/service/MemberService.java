@@ -5,7 +5,7 @@ import com.overcomingroom.bellbell.exception.ErrorCode;
 import com.overcomingroom.bellbell.member.domain.dto.KakaoUserInfo;
 import com.overcomingroom.bellbell.member.domain.entity.Member;
 import com.overcomingroom.bellbell.member.repository.MemberRepository;
-import com.overcomingroom.bellbell.oauth.dto.ResponseToken;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,16 +53,15 @@ public class MemberService {
   /**
    * 액세스 토큰으로 카카오에서 사용자정보를 받아옵니다.
    *
-   * @param responseToken 클라이언트로부터 받아온 액세스 토큰
+   * @param accessToken 클라이언트로부터 받아온 액세스 토큰
    * @return 카카오 사용자 정보
    */
 
-  public KakaoUserInfo getKakaoUserInfo(ResponseToken responseToken) {
-    log.info(responseToken.getAccessToken());
+  public KakaoUserInfo getKakaoUserInfo(String accessToken) {
     // 받은 액세스 토큰을 사용하여 사용자 정보 요청
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-    headers.setBearerAuth(responseToken.getAccessToken());
+    headers.setBearerAuth(accessToken);
     RequestEntity<?> requestEntity = RequestEntity.get(userInfoUrl).headers(headers).build();
 
     // 사용자 정보 요청
@@ -90,9 +89,12 @@ public class MemberService {
    * @return Member 정보가 저장된 DTO
    */
   public KakaoUserInfo getMemberInfo(String accessToken) {
-    Member member = loadMember(getKakaoUserInfo(new ResponseToken(accessToken))).orElseThrow(
+    Member member = loadMember(getKakaoUserInfo(accessToken)).orElseThrow(
         () -> new CustomException(ErrorCode.MEMBER_INVALID));
     return new KakaoUserInfo(member.getNickname(), member.getEmail());
   }
 
+  public List<Member> getAllMembers() {
+    return memberRepository.findAll();
+  }
 }
