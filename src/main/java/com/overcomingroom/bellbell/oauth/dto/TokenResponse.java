@@ -7,8 +7,9 @@ import lombok.NoArgsConstructor;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ResponseToken {
+public class TokenResponse {
 
   private String accessToken; // 카카오로 부터 응답 받은 AccessToken
+  private String refreshToken; // 카카오로 부터 응답 받은 refreshToken
 
 }
