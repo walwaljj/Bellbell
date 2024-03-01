@@ -1,7 +1,13 @@
 package com.overcomingroom.bellbell.weather.controller;
 
 
+import com.overcomingroom.bellbell.weather.domain.CategoryType;
+import com.overcomingroom.bellbell.weather.domain.dto.WeatherResponse;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -133,12 +139,19 @@ public class WeatherController {
 
         log.info(">>>>>>>>>>>>> start reading OpenAPI >>>>>>>>>>>>>");
         ResponseEntity<String> response = restTemplate.exchange(builder.build(true).toUri(), HttpMethod.GET, null, String.class);
+        JSONObject jsonObject = new JSONObject(response.getBody()).getJSONObject("response").getJSONObject("body").getJSONObject("items");
+        JSONArray jsonArray = jsonObject.getJSONArray("item");
+        Map<CategoryType, String> weatherInfo = new HashMap<>();
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject jsonData = jsonArray.getJSONObject(i);
+            weatherInfo.put(CategoryType.valueOf(jsonData.get("category").toString()), jsonData.get("fcstValue").toString());
+        }
 
         if (!response.getBody().startsWith("{")) {
             log.warn("예상치 못한 응답 형식: {}", response.getBody());
             return ResponseEntity.badRequest().body("잘못된 응답 형식입니다.");
         }
-        return response;
+        return ResponseEntity.ok(new JSONObject(new WeatherResponse(weatherInfo)).toString());
     }
 
 }
