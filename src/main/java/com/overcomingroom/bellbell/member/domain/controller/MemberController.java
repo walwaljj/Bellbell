@@ -32,7 +32,7 @@ public class MemberController {
             .responseCode(responseCode)
             .code(responseCode.getCode())
             .message(responseCode.getMessage())
-            .data(memberService.getMemberInfo(accessToken))
+            .data(memberService.getMemberInfo(accessToken.substring(7)))
             .build()
     );
   }
