@@ -1,8 +1,5 @@
 package com.overcomingroom.bellbell.weather.domain;
 
-import com.overcomingroom.bellbell.weather.domain.dto.FcstDto;
-
-
 /**
  * 코드값 정보
  */
@@ -22,6 +19,7 @@ public enum CategoryType {
     REH("습도", "%"),
     PTY("강수형태", "코드값"),
     VEC("풍향", "m/s"),
+    LGT("낙뢰", "deg"),
     WSD("풍속", "1"),
     TMP("1시간 기온", "℃");
 
@@ -36,7 +34,7 @@ public enum CategoryType {
 
     public static String getCodeInfo(String name, String value) {
         CategoryType c = CategoryType.valueOf(name);
-        if(c == CategoryType.PTY) {
+        if (c == CategoryType.PTY) {
             switch (value) {
                 case "0":
                     return "없음";
@@ -49,8 +47,8 @@ public enum CategoryType {
                 case "4":
                     return "소나기";
             }
-        } else if(c == CategoryType.SKY) {
-            switch(value) {
+        } else if (c == CategoryType.SKY) {
+            switch (value) {
                 case "1":
                     return "맑음";
                 case "3":
