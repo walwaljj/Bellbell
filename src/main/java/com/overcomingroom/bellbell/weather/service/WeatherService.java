@@ -25,6 +25,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.charset.Charset;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.*;
 
 @Service
@@ -48,10 +49,10 @@ public class WeatherService {
 
     // 사용자 위치 정보 등록
     // 사용자가 위치와 x, y 를 저장함.
-    public void locationSave(String nickname, String si, String gu, String dong) {
+    public void locationSave(String email, String si, String gu, String dong) {
 
         // 1. 사용자 정보 찾기
-        Member member = findMemberByNickname(nickname);
+        Member member = findMemberByEmail(email);
 
         // 2. x, y 지표를 저장
 
@@ -65,8 +66,8 @@ public class WeatherService {
     }
 
     // 멤버 찾기
-    private Member findMemberByNickname(String nickname) {
-        return memberRepository.findByNickname(nickname).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_INVALID));
+    private Member findMemberByEmail(String email) {
+        return memberRepository.findByEmail(email).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_INVALID));
     }
 
     // 위치 기 저장 여부 확인
@@ -105,15 +106,24 @@ public class WeatherService {
 
 
     // 날씨 api 호출
-    public WeatherResponse callForecastApi(String nickname) {
-        Member member = findMemberByNickname(nickname);
+    public WeatherResponse callForecastApi(String email) {
+        Member member = findMemberByEmail(email);
         Location location = locationRepository.findByMemberId(member.getId()).orElseThrow(() -> new CustomException(ErrorCode.LOCATION_INFORMATION_NOT_FOUND));
 
-        LocalDate now = LocalDate.now();
-        String baseDate = now.toString().replaceAll("-", "");
-        String numOfRows = "3";
+        LocalDate localDate = LocalDate.now();
+        String baseDate = localDate.toString().replaceAll("-", "");
+        LocalTime now = LocalTime.now();
+        int hour = now.getHour();
+        int minute = now.getMinute();
+        String baseTime;
+        if (minute < 30) {
+            baseTime = String.format("%02d%02d", hour, 0);
+        } else {
+            baseTime = String.format("%02d%02d", hour, 30);
+        }
+        String numOfRows = "100";
         String pageNo = "1";
-        String baseTime = "0500";
+
         String dataType = "json";
         String nx = location.getGridX();
         String ny = location.getGridY();
@@ -130,6 +140,7 @@ public class WeatherService {
 
         log.info(">>>>>>>>>>>>> start reading OpenAPI >>>>>>>>>>>>>");
         ResponseEntity<String> response = getResponse(builder);
+        log.info("response = {} ", response);
         JSONObject jsonObject = new JSONObject(response.getBody()).getJSONObject("response").getJSONObject("body").getJSONObject("items");
         JSONArray jsonArray = jsonObject.getJSONArray("item");
         Map<CategoryType, String> weatherInfo = new HashMap<>();

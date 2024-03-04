@@ -30,7 +30,7 @@ public class WeatherController {
     ) {
 
         KakaoUserInfo memberInfo = memberService.getMemberInfo(accessToken);
-        weatherService.locationSave(memberInfo.getNickname(), si, gu, dong);
+        weatherService.locationSave(memberInfo.getEmail(), si, gu, dong);
 
         ResponseCode responseCode = ResponseCode.MEMBER_LOCATION_SAVE_SUCCESSFUL;
 
@@ -54,7 +54,7 @@ public class WeatherController {
                         .responseCode(responseCode)
                         .code(responseCode.getCode())
                         .message(responseCode.getMessage())
-                        .data(weatherService.callForecastApi(memberInfo.getNickname()))
+                        .data(weatherService.callForecastApi(memberInfo.getEmail()))
                         .build());
     }
 }

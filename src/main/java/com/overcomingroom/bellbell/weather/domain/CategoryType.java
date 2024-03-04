@@ -19,6 +19,7 @@ public enum CategoryType {
     REH("습도", "%"),
     PTY("강수형태", "코드값"),
     VEC("풍향", "m/s"),
+    LGT("낙뢰", "deg"),
     WSD("풍속", "1"),
     TMP("1시간 기온", "℃");
 
