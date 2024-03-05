@@ -34,10 +34,17 @@ public enum CategoryType {
 
     public static String getCodeInfo(String name, String value) {
         CategoryType c = CategoryType.valueOf(name);
-        if (c == CategoryType.PTY) {
+        if (c == CategoryType.SKY || (c == CategoryType.PTY && value.equals("0"))) {
             switch (value) {
-                case "0":
-                    return "없음";
+                case "1", "0":
+                    return "맑음";
+                case "3":
+                    return "구름많음";
+                case "4":
+                    return "흐림";
+            }
+        } else if (c == CategoryType.PTY) {
+            switch (value) {
                 case "1":
                     return "비";
                 case "2":
@@ -47,16 +54,7 @@ public enum CategoryType {
                 case "4":
                     return "소나기";
             }
-        } else if (c == CategoryType.SKY) {
-            switch (value) {
-                case "1":
-                    return "맑음";
-                case "3":
-                    return "구름많음";
-                case "4":
-                    return "흐림";
-            }
         }
-        return value;
+        return null;
     }
 }
