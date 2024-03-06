@@ -17,7 +17,12 @@ public enum ResponseCode {
   // Weather
   LOCATION_INFORMATION_SEARCH_SUCCESSFUL(HttpStatus.OK, "200", "위치 정보 조회 성공"),
   WEATHER_INFO_GET_SUCCESSFUL(HttpStatus.OK, "200" ,"날씨 정보 조회 성공" ),
-  MEMBER_LOCATION_SAVE_SUCCESSFUL(HttpStatus.OK, "200" ,"위치 정보 저장 성공" );
+  MEMBER_LOCATION_SAVE_SUCCESSFUL(HttpStatus.OK, "200" ,"위치 정보 저장 성공" ),
+
+  // UserNotification
+  USER_NOTIFICATION_CREATE_SUCCESSFUL(HttpStatus.OK, "200", "사용자 알림 생성 성공"),
+  USER_NOTIFICATIONS_GET_SUCCESSFUL(HttpStatus.OK, "200", "사용자 알림 목록 가져오기 성공"),
+  USER_NOTIFICATION_DELETE_SUCCESSFUL(HttpStatus.OK, "200", "사용자 알림 삭제 성공");
 
   private final HttpStatus httpStatus;
   private final String code;

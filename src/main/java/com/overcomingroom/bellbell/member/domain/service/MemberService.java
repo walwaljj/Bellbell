@@ -94,6 +94,11 @@ public class MemberService {
     return new KakaoUserInfo(member.getNickname(), member.getEmail());
   }
 
+  public Member getMember(String accessToken) {
+    return memberRepository.findByEmail(getMemberInfo(accessToken).getEmail())
+        .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_INVALID));
+  }
+
   public List<Member> getAllMembers() {
     return memberRepository.findAll();
   }
