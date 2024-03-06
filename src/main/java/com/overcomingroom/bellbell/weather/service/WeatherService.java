@@ -6,6 +6,7 @@ import com.overcomingroom.bellbell.member.domain.entity.Member;
 import com.overcomingroom.bellbell.member.repository.MemberRepository;
 import com.overcomingroom.bellbell.weather.domain.CategoryType;
 import com.overcomingroom.bellbell.weather.domain.dto.LocationDto;
+import com.overcomingroom.bellbell.weather.domain.dto.WeatherAndClothesDto;
 import com.overcomingroom.bellbell.weather.domain.dto.WeatherResponse;
 import com.overcomingroom.bellbell.weather.domain.entity.Location;
 import com.overcomingroom.bellbell.weather.repository.LocationRepository;
@@ -24,7 +25,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.charset.Charset;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 
@@ -47,6 +48,9 @@ public class WeatherService {
 
     private final LocationRepository locationRepository;
 
+    private String baseTime;
+    private String baseDate;
+
     // 사용자 위치 정보 등록
     // 사용자가 위치와 x, y 를 저장함.
     public void locationSave(String email, String si, String gu, String dong) {
@@ -58,7 +62,7 @@ public class WeatherService {
 
         // 만약 해당 유저가 저장한 지역 정보가 있다면 삭제
         if (chkLocationData(member)) {
-            deleteLocationData(member.getId());
+            deleteLocationData(member);
         }
 
         // 저장
@@ -82,8 +86,8 @@ public class WeatherService {
     }
 
     // 위치 정보 삭제
-    private void deleteLocationData(Long memberId) {
-        Location location = locationRepository.findByMemberId(memberId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_LOCATION_INFORMATION_NOT_FOUND));
+    private void deleteLocationData(Member member) {
+        Location location = findLocationByMember(member);
         locationRepository.delete(location);
 
     }
@@ -104,30 +108,31 @@ public class WeatherService {
                 .build();
     }
 
-
     // 날씨 api 호출
-    public WeatherResponse callForecastApi(String email) {
-        Member member = findMemberByEmail(email);
-        Location location = locationRepository.findByMemberId(member.getId()).orElseThrow(() -> new CustomException(ErrorCode.LOCATION_INFORMATION_NOT_FOUND));
+    private WeatherResponse callForecastApi(Location location) {
 
-        LocalDate localDate = LocalDate.now();
-        String baseDate = localDate.toString().replaceAll("-", "");
-        LocalTime now = LocalTime.now();
-        int hour = now.getHour();
+        LocalDateTime now = LocalDateTime.now();
         int minute = now.getMinute();
-        String baseTime;
+
         if (minute < 30) {
-            baseTime = String.format("%02d%02d", hour, 0);
+            now = now.minusHours(1);
+            baseTime = String.format("%02d%02d", now.getHour(), 0);
         } else {
-            baseTime = String.format("%02d%02d", hour, 30);
+            baseTime = String.format("%02d%02d", now.getHour(), 30);
+        }
+
+        if (now.getHour() == 0) {
+            baseDate = now.minusDays(1).toLocalDate().toString().replaceAll("-", "");
+        } else {
+            baseDate = now.toLocalDate().toString().replaceAll("-", "");
         }
         String numOfRows = "100";
         String pageNo = "1";
-
         String dataType = "json";
         String nx = location.getGridX();
         String ny = location.getGridY();
 
+        // uri 생성
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(weatherApiUrl)
                 .queryParam("serviceKey", serviceKey)
                 .queryParam("numOfRows", numOfRows)
@@ -138,9 +143,9 @@ public class WeatherService {
                 .queryParam("ny", ny)
                 .queryParam("dataType", dataType);
 
+        // api 호출
         log.info(">>>>>>>>>>>>> start reading OpenAPI >>>>>>>>>>>>>");
         ResponseEntity<String> response = getResponse(builder);
-        log.info("response = {} ", response);
         JSONObject jsonObject = new JSONObject(response.getBody()).getJSONObject("response").getJSONObject("body").getJSONObject("items");
         JSONArray jsonArray = jsonObject.getJSONArray("item");
         Map<CategoryType, String> weatherInfo = new HashMap<>();
@@ -154,12 +159,58 @@ public class WeatherService {
             log.warn("예상치 못한 응답 형식: {}", response.getBody());
             new CustomException(ErrorCode.API_CALL_BAD_REQUEST);
         }
+
         return new WeatherResponse(weatherInfo);
     }
 
+    // 옷차림과 날씨 정보 반환
+    public WeatherAndClothesDto weatherAndClothesInfo(String email) {
+
+        // 1. 사용자 정보
+        Member member = findMemberByEmail(email);
+
+        // 2. 사용자 지역 정보
+        Location location = findLocationByMember(member);
+
+        // 3. 날씨 api 호출
+        WeatherResponse weatherResponse = callForecastApi(location);
+
+        // 4. api 호출 결과에 따른 날씨 및 옷차림 안내
+        Map<CategoryType, String> weatherInfo = weatherResponse.getWeatherInfo();
+
+        int temp = 0;
+        String sky = "";
+        for (CategoryType categoryType : weatherInfo.keySet()) {
+            if (categoryType.equals(CategoryType.T1H)) {
+                temp = Integer.parseInt(weatherInfo.get(categoryType));
+            }
+            if (categoryType.equals(CategoryType.SKY) || categoryType.equals(CategoryType.PTY)) {
+                sky = CategoryType.getCodeInfo(categoryType.toString(), weatherInfo.get(categoryType));
+            }
+        }
+
+        return WeatherAndClothesDto.builder()
+                .temp(temp)
+                .clothes(clothesRecommendation(temp))
+                .location(location.getLocation())
+                .now(LocalTime.now())
+                .weather(sky)
+                .baseTime(baseTime)
+                .fcstDate(baseDate)
+                .build();
+    }
+
+    // 멤버 지역 정보 찾기
+    public Location findLocationByMember(Member member) {
+        Optional<Location> optionalLocation = locationRepository.findByMemberId(member.getId());
+        if (optionalLocation.isEmpty()) {
+            throw new CustomException(ErrorCode.LOCATION_INFORMATION_NOT_FOUND);
+        }
+        return optionalLocation.get();
+    }
+
     // 시 api 정보
-    // http://www.kma.go.kr/DFSROOT/POINT/DATA/top.json.txt
-    public String findSiCode(String si) {
+    private String findSiCode(String si) {
 
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(locationApiUrl + "/top.json.txt");
 
@@ -195,6 +246,7 @@ public class WeatherService {
         return getCode(gu, response.getBody(), ErrorCode.GU_API_CALL_BAD_REQUEST);
     }
 
+    // uri 에 필요한 code 를 반환하는 메서드
     private String getCode(String gu, String responseBody, ErrorCode errorCode) {
 
         JSONArray jsonArray = new JSONArray(responseBody);
@@ -243,5 +295,26 @@ public class WeatherService {
     }
 
     // 옷차림 정보
+    private String clothesRecommendation(int temp) {
 
+        int intTemp = temp;
+
+        if (intTemp <= 4) {
+            return "패딩, 두꺼운 코트, 목도리, 기모제품";
+        } else if (intTemp >= 5 && intTemp <= 8) {
+            return "코트, 가죽자켓, 히트텍, 니트, 레깅스";
+        } else if (intTemp >= 9 && intTemp <= 11) {
+            return "자켓, 트렌치 코트, 야상, 니트, 청바지, 스타킹";
+        } else if (intTemp >= 12 && intTemp <= 16) {
+            return "자켓, 가디건, 야상, 면바지, 청바지, 스타킹";
+        } else if (intTemp >= 17 && intTemp <= 19) {
+            return "얇은 니트, 가디건, 맨투맨, 가디건, 청바지";
+        } else if (intTemp >= 20 && intTemp <= 22) {
+            return "긴팔, 얇은 가디건, 면바지, 청바지";
+        } else if (intTemp >= 23 && intTemp <= 27) {
+            return "반팔, 얇은 셔츠, 반바지, 면바지";
+        } else {
+            return "반팔, 민소매, 반바지, 원피스";
+        }
+    }
 }

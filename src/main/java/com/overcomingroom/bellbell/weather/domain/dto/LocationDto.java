@@ -1,6 +1,5 @@
 package com.overcomingroom.bellbell.weather.domain.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.overcomingroom.bellbell.weather.domain.entity.Location;
 import lombok.Builder;
 import lombok.Getter;
