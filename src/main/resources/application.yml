@@ -4,7 +4,7 @@ spring:
     include: secret
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: create-drop
       jdbc:
         batch_size=50
     properties:
@@ -16,7 +16,6 @@ spring:
 logging:
   level:
     root: INFO
-    com.wanted.sns_feed_service: DEBUG
     org.hibernate.orm.jdbc.bind: TRACE
     org.hibernate.orm.jdbc.extract: TRACE
 

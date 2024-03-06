@@ -11,6 +11,7 @@ public enum ErrorCode {
 
   // OAuth
   LOGIN_ERROR(HttpStatus.BAD_REQUEST, "로그인 오류"),
+  ACCESS_DENIED(HttpStatus.BAD_REQUEST, "접근 권한이 없습니다."),
 
   // Weather
   LOCATION_INFORMATION_NOT_FOUND(HttpStatus.NOT_FOUND, "위치 정보를 찾을 수 없습니다."),
@@ -19,7 +20,11 @@ public enum ErrorCode {
   SI_API_CALL_BAD_REQUEST(HttpStatus.BAD_REQUEST, "알맞는 시, 도를 입력해 주세요. ex) 서울특별시, 경상남도.."),
   GU_API_CALL_BAD_REQUEST(HttpStatus.BAD_REQUEST, "알맞는 시, 구, 군을 입력해 주세요. ex)종로구, 사상구, 창원시.."),
   DONG_API_CALL_BAD_REQUEST(HttpStatus.BAD_REQUEST, "알맞는 동, 읍, 면, 리를 입력해 주세요. ex) 종로1가, 괘법동..."),
-  WEATHER_API_RES_RESULT_IS_EMPTY(HttpStatus.NOT_FOUND, "날씨 데이터가 존재하지 않습니다.");
+  WEATHER_API_RES_RESULT_IS_EMPTY(HttpStatus.NOT_FOUND, "날씨 데이터가 존재하지 않습니다."),
+
+  // UserNotification
+  INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "입력값이 유효하지 않습니다."),
+  NOT_EXISTS_USER_NOTIFICATION(HttpStatus.BAD_REQUEST, "사용자 알림이 존재하지 않습니다.");
 
   private final HttpStatus status;
   private final String msg;
