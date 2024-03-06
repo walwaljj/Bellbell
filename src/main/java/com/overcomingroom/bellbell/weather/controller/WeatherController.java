@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping(value = "/v1",produces = "application/json; charset=utf8")
+@RequestMapping(value = "/v1", produces = "application/json; charset=utf8")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "Authentication")
 public class WeatherController {
@@ -42,8 +42,8 @@ public class WeatherController {
                         .build());
     }
 
-    @GetMapping("/weather") // API 를 호출하고 JSON을 객체로 저장함.
-    public ResponseEntity<ResResult> callForecastApi(
+    @GetMapping("/weather")
+    public ResponseEntity<ResResult> weatherAndClothesInfo(
             @RequestHeader("Authentication") String accessToken
     ) {
         KakaoUserInfo memberInfo = memberService.getMemberInfo(accessToken);
@@ -54,7 +54,7 @@ public class WeatherController {
                         .responseCode(responseCode)
                         .code(responseCode.getCode())
                         .message(responseCode.getMessage())
-                        .data(weatherService.callForecastApi(memberInfo.getEmail()))
+                        .data(weatherService.weatherAndClothesInfo(memberInfo.getEmail()))
                         .build());
     }
 }
