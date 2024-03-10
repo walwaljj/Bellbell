@@ -14,7 +14,7 @@ public class WeatherAndClothesDto {
     private LocalTime now; // 현재 시각
     private String location; // 발표 지역
     private String weather;
-    private Integer temp;
+    private Float temp;
     private String clothes;
 
     public static String weatherAndClothesInfo(WeatherAndClothesDto weatherAndClothesDto) {

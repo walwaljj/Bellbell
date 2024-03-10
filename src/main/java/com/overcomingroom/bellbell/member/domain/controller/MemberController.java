@@ -3,21 +3,17 @@ package com.overcomingroom.bellbell.member.domain.controller;
 import com.overcomingroom.bellbell.member.domain.service.MemberService;
 import com.overcomingroom.bellbell.response.ResResult;
 import com.overcomingroom.bellbell.response.ResponseCode;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.net.Authenticator;
-
 /**
  * 멤버 관련 API 를 처리하는 컨트롤러입니다.
  */
 @RestController
 @RequiredArgsConstructor
-@SecurityRequirement(name = "Authentication")
 public class MemberController {
 
   private final MemberService memberService;
