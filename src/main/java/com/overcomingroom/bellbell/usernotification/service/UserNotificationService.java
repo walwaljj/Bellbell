@@ -49,7 +49,7 @@ public class UserNotificationService {
         UserNotification userNotification = userNotificationRepository.save(new UserNotification(dto.getContent(), dto.getTime(), dto.getDay(), member));
 
         // 스케줄 설정 메소드
-        settingsSchedule(userNotification, member);
+        settingsSchedule(userNotification, accessToken);
 
         return ResponseCode.USER_NOTIFICATION_CREATE_SUCCESSFUL;
     }
@@ -58,9 +58,9 @@ public class UserNotificationService {
      * 사용자가 생성한 알림 정보를 토대로 스케줄을 설정합니다.
      *
      * @param userNotification 알림 서비스 정보
-     * @param member           사용자 정보
+     * @param accessToken           토큰
      */
-    private void settingsSchedule(UserNotification userNotification, Member member) {
+    private void settingsSchedule(UserNotification userNotification, String accessToken) {
 
         // cronExpression
         String cronExpression = "";
@@ -82,7 +82,7 @@ public class UserNotificationService {
             // 만약 유저의 service 가 서비스값과 같다면 실행
             switch (userNotification.getContent()) {
                 case "WEATHER_AND_CLOTHING":
-                    WeatherAndClothesDto weatherAndClothesDto = weatherService.weatherAndClothesInfo(member.getEmail());
+                    WeatherAndClothesDto weatherAndClothesDto = weatherService.weatherAndClothesInfo(accessToken);
                     log.info("\n=========================Execution by scheduling!=========================\n {}", WeatherAndClothesDto.weatherAndClothesInfo(weatherAndClothesDto) + "\n===================================END====================================\n");
             }
 
