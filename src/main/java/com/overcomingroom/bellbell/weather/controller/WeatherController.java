@@ -1,5 +1,6 @@
 package com.overcomingroom.bellbell.weather.controller;
 
+import com.overcomingroom.bellbell.basicNotification.domain.dto.BasicNotificationRequestDto;
 import com.overcomingroom.bellbell.response.ResResult;
 import com.overcomingroom.bellbell.response.ResponseCode;
 import com.overcomingroom.bellbell.weather.service.WeatherService;
@@ -33,17 +34,27 @@ public class WeatherController {
 
     @PostMapping("/location")
     public ResponseEntity<ResResult> saveLocationWithAddress(
-        @RequestHeader("Authorization") String accessToken,
-        @RequestParam String address
+            @RequestHeader("Authorization") String accessToken,
+            @RequestParam String address,
+            @RequestParam String day,
+            @RequestParam String time,
+            @RequestParam(defaultValue = "true") String isActivated
     ) {
-        weatherService.saveLocationWithAddress(accessToken.substring(7), address);
+
+        BasicNotificationRequestDto basicNotificationRequestDto = BasicNotificationRequestDto.builder()
+                .day(day)
+                .time(time)
+                .isActivated(Boolean.valueOf(isActivated))
+                .build();
+
+        weatherService.saveLocationWithAddress(accessToken.substring(7), address, basicNotificationRequestDto);
         ResponseCode responseCode = ResponseCode.MEMBER_LOCATION_SAVE_SUCCESSFUL;
 
         return ResponseEntity.ok(
-            ResResult.builder()
-                .responseCode(responseCode)
-                .code(responseCode.getCode())
-                .message(responseCode.getMessage())
-                .build());
+                ResResult.builder()
+                        .responseCode(responseCode)
+                        .code(responseCode.getCode())
+                        .message(responseCode.getMessage())
+                        .build());
     }
 }

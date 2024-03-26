@@ -1,32 +1,32 @@
 package com.overcomingroom.bellbell.weather.service;
 
+import com.overcomingroom.bellbell.basicNotification.domain.dto.BasicNotificationRequestDto;
+import com.overcomingroom.bellbell.basicNotification.domain.entity.BasicNotification;
+import com.overcomingroom.bellbell.basicNotification.service.BasicNotificationService;
 import com.overcomingroom.bellbell.exception.CustomException;
 import com.overcomingroom.bellbell.exception.ErrorCode;
 import com.overcomingroom.bellbell.member.domain.entity.Member;
 import com.overcomingroom.bellbell.member.domain.service.MemberService;
 import com.overcomingroom.bellbell.weather.domain.CategoryType;
 import com.overcomingroom.bellbell.weather.domain.dto.GpsTransfer;
-import com.overcomingroom.bellbell.weather.domain.dto.LocationDto;
 import com.overcomingroom.bellbell.weather.domain.dto.WeatherAndClothesDto;
+import com.overcomingroom.bellbell.weather.domain.dto.WeatherDto;
 import com.overcomingroom.bellbell.weather.domain.dto.WeatherResponse;
-import com.overcomingroom.bellbell.weather.domain.entity.Location;
-import com.overcomingroom.bellbell.weather.repository.LocationRepository;
+import com.overcomingroom.bellbell.weather.domain.entity.Weather;
+import com.overcomingroom.bellbell.weather.repository.WeatherRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+
 import java.nio.charset.Charset;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -50,9 +50,11 @@ public class WeatherService {
     @Value("${weather.service-url2}")
     private String weatherApiUrl2;
 
-    private final LocationRepository locationRepository;
+    private final WeatherRepository weatherRepository;
 
     private final MemberService memberService;
+
+    private final BasicNotificationService basicNotificationService;
 
     private String baseTime;
     private String baseDate;
@@ -61,7 +63,7 @@ public class WeatherService {
     // 위치 기 저장 여부 확인
     private boolean chkLocationData(Member member) {
 
-        Optional<Location> byMemberId = locationRepository.findByMemberId(member.getId());
+        Optional<Weather> byMemberId = weatherRepository.findByMemberId(member.getId());
 
         if (byMemberId.isPresent()) {
             return true; // 저장 됨.
@@ -69,16 +71,8 @@ public class WeatherService {
         return false; // 저장 되지 않음.
     }
 
-    // 위치 정보 삭제
-    private void deleteLocationData(Member member) {
-        Location location = findLocationByMember(member);
-        locationRepository.delete(location);
-
-    }
-
-
     // 날씨 api 호출(초단기예보)
-    private WeatherResponse callForecastApi(Location location) {
+    private WeatherResponse callForecastApi(Weather location) {
 
         LocalDateTime now = LocalDateTime.now();
         int minute = now.getMinute();
@@ -140,11 +134,11 @@ public class WeatherService {
         Member member = memberService.getMember(accessToken);
 
         // 2. 사용자 지역 정보
-        Location location = findLocationByMember(member);
+        Weather weather = findLocationByMember(member);
 
         // 3. 날씨 api 호출
-        WeatherResponse weatherResponse = callForecastApi(location);  // 초단기예보
-        WeatherResponse weatherResponse2 = getUltraSrtNcst(location); // 초단기실황
+        WeatherResponse weatherResponse = callForecastApi(weather);  // 초단기예보
+        WeatherResponse weatherResponse2 = getUltraSrtNcst(weather); // 초단기실황
 
         // 4. api 호출 결과에 따른 날씨 및 옷차림 안내
         Map<CategoryType, String> weatherInfo = weatherResponse.getWeatherInfo();
@@ -166,7 +160,6 @@ public class WeatherService {
         return WeatherAndClothesDto.builder()
                 .temp(temp)
                 .clothes(clothesRecommendation(temp))
-                .location(location.getLocation())
                 .now(LocalTime.now())
                 .weather(sky)
                 .baseTime(baseTime)
@@ -175,12 +168,12 @@ public class WeatherService {
     }
 
     // 멤버 지역 정보 찾기
-    public Location findLocationByMember(Member member) {
-        Optional<Location> optionalLocation = locationRepository.findByMemberId(member.getId());
-        if (optionalLocation.isEmpty()) {
+    private Weather findLocationByMember(Member member) {
+        Optional<Weather> optionalWeather = weatherRepository.findByMemberId(member.getId());
+        if (optionalWeather.isEmpty()) {
             throw new CustomException(ErrorCode.LOCATION_INFORMATION_NOT_FOUND);
         }
-        return optionalLocation.get();
+        return optionalWeather.get();
     }
 
     // api 호출
@@ -242,19 +235,15 @@ public class WeatherService {
     }
 
     // 클라이언트에서 전달받은 주소로 경위도를 가져와 기상청 xy 좌표로 변환 후 위치를 저장
-    public void saveLocationWithAddress(String accessToken, String address) {
+    public void saveLocationWithAddress(String accessToken, String address, BasicNotificationRequestDto basicNotificationRequestDto) {
         Member member = memberService.getMember(accessToken);
-        // 만약 해당 유저가 저장한 지역 정보가 있다면 삭제
-        if (chkLocationData(member)) {
-            deleteLocationData(member);
-        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         headers.set("Authorization", "KakaoAK " + clientId);
         RequestEntity<?> requestEntity = RequestEntity.get(
-                "https://dapi.kakao.com/v2/local/search/address.json?query=" + address).headers(headers)
-            .build();
+                        "https://dapi.kakao.com/v2/local/search/address.json?query=" + address).headers(headers)
+                .build();
 
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
@@ -265,18 +254,23 @@ public class WeatherService {
 
         GpsTransfer gpsTransfer = new GpsTransfer();
         gpsTransfer.transfer(lon, lat);
-        locationRepository.save(Location.toEntity(
-            LocationDto.builder()
-                .memberId(member.getId())
-                .location(address)
-                .gridX(String.valueOf(gpsTransfer.getX()))
-                .gridY(String.valueOf(gpsTransfer.getY()))
-                .build())
+
+        // 알람 정보 생성
+        BasicNotification basicNotification = basicNotificationService.setNotification(basicNotificationRequestDto);
+
+        weatherRepository.save(Weather.toEntity(
+                WeatherDto.builder()
+                        .memberId(member.getId())
+                        .address(address)
+                        .gridX(String.valueOf(gpsTransfer.getX()))
+                        .gridY(String.valueOf(gpsTransfer.getY()))
+                        .basicNotification(basicNotification)
+                        .build())
         );
     }
 
     // 날씨 api 호출(초단기실황)
-    private WeatherResponse getUltraSrtNcst(Location location) {
+    private WeatherResponse getUltraSrtNcst(Weather location) {
 
         LocalDateTime now = LocalDateTime.now();
         baseTime = String.format("%02d%02d", now.getHour(), 0);
@@ -294,14 +288,14 @@ public class WeatherService {
 
         // uri 생성
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(weatherApiUrl2)
-            .queryParam("serviceKey", serviceKey)
-            .queryParam("numOfRows", numOfRows)
-            .queryParam("pageNo", pageNo)
-            .queryParam("base_date", baseDate)
-            .queryParam("base_time", baseTime)
-            .queryParam("nx", nx)
-            .queryParam("ny", ny)
-            .queryParam("dataType", dataType);
+                .queryParam("serviceKey", serviceKey)
+                .queryParam("numOfRows", numOfRows)
+                .queryParam("pageNo", pageNo)
+                .queryParam("base_date", baseDate)
+                .queryParam("base_time", baseTime)
+                .queryParam("nx", nx)
+                .queryParam("ny", ny)
+                .queryParam("dataType", dataType);
 
         // api 호출
         log.info(">>>>>>>>>>>>> start reading OpenAPI >>>>>>>>>>>>>");
