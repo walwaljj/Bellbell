@@ -1,7 +1,8 @@
 package com.overcomingroom.bellbell.weather.service;
 
+import com.overcomingroom.bellbell.basicNotification.domain.dto.BasicNotificationRequestDto;
 import com.overcomingroom.bellbell.basicNotification.domain.entity.BasicNotification;
-import com.overcomingroom.bellbell.basicNotification.repository.BasicNotificationRepository;
+import com.overcomingroom.bellbell.basicNotification.service.BasicNotificationService;
 import com.overcomingroom.bellbell.exception.CustomException;
 import com.overcomingroom.bellbell.exception.ErrorCode;
 import com.overcomingroom.bellbell.member.domain.entity.Member;
@@ -53,6 +54,8 @@ public class WeatherService {
 
     private final MemberService memberService;
 
+    private final BasicNotificationService basicNotificationService;
+
     private String baseTime;
     private String baseDate;
 
@@ -67,14 +70,6 @@ public class WeatherService {
         }
         return false; // 저장 되지 않음.
     }
-
-    // 위치 정보 삭제
-//    private void deleteLocationData(Member member) {
-//        Weather weather = findLocationByMember(member);
-//        weatherRepository.delete(weather);
-//
-//    }
-
 
     // 날씨 api 호출(초단기예보)
     private WeatherResponse callForecastApi(Weather location) {
@@ -165,7 +160,6 @@ public class WeatherService {
         return WeatherAndClothesDto.builder()
                 .temp(temp)
                 .clothes(clothesRecommendation(temp))
-//                .location(weather.getLocation())
                 .now(LocalTime.now())
                 .weather(sky)
                 .baseTime(baseTime)
@@ -174,7 +168,7 @@ public class WeatherService {
     }
 
     // 멤버 지역 정보 찾기
-    public Weather findLocationByMember(Member member) {
+    private Weather findLocationByMember(Member member) {
         Optional<Weather> optionalWeather = weatherRepository.findByMemberId(member.getId());
         if (optionalWeather.isEmpty()) {
             throw new CustomException(ErrorCode.LOCATION_INFORMATION_NOT_FOUND);
@@ -241,7 +235,7 @@ public class WeatherService {
     }
 
     // 클라이언트에서 전달받은 주소로 경위도를 가져와 기상청 xy 좌표로 변환 후 위치를 저장
-    public void saveLocationWithAddress(String accessToken, String address) {
+    public void saveLocationWithAddress(String accessToken, String address, BasicNotificationRequestDto basicNotificationRequestDto) {
         Member member = memberService.getMember(accessToken);
 
         HttpHeaders headers = new HttpHeaders();
@@ -261,7 +255,8 @@ public class WeatherService {
         GpsTransfer gpsTransfer = new GpsTransfer();
         gpsTransfer.transfer(lon, lat);
 
-        BasicNotification basicNotification = new BasicNotification();
+        // 알람 정보 생성
+        BasicNotification basicNotification = basicNotificationService.setNotification(basicNotificationRequestDto);
 
         weatherRepository.save(Weather.toEntity(
                 WeatherDto.builder()
@@ -269,6 +264,7 @@ public class WeatherService {
                         .address(address)
                         .gridX(String.valueOf(gpsTransfer.getX()))
                         .gridY(String.valueOf(gpsTransfer.getY()))
+                        .basicNotification(basicNotification)
                         .build())
         );
     }
