@@ -81,7 +81,7 @@ public class OAuthService {
             .getId();
 
     // 기본 알림 생성 (현재 날씨 알림만 생성)
-    if (member.isEmpty() || weatherService.getWeather(memberId).isEmpty()) {
+    if (member.isEmpty() || weatherService.getWeather(accessToken).isEmpty()) {
       weatherService.setWeather(memberService.getMember(accessToken));
     }
 

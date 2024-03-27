@@ -1,6 +1,6 @@
 package com.overcomingroom.bellbell.basicNotification.domain.entity;
 
-import com.overcomingroom.bellbell.basicNotification.domain.dto.BasicNotificationRequestDto;
+import com.overcomingroom.bellbell.basicNotification.domain.dto.AbstractBasicNotificationDto;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -14,6 +14,7 @@ import lombok.Setter;
 @Entity
 @Builder
 @Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class BasicNotification {
@@ -23,15 +24,16 @@ public class BasicNotification {
     private Long id;
 
     @Builder.Default
-    @Setter
-    private boolean isActivated = false;
+    private Boolean isActivated = false;
     private String day;
     private String time;
 
-    public static BasicNotification toEntity(BasicNotificationRequestDto basicNotificationRequestDto) {
+    public static BasicNotification toEntity(
+        AbstractBasicNotificationDto abstractBasicNotificationDto) {
         return BasicNotification.builder()
-                .day(basicNotificationRequestDto.getDay())
-                .time(basicNotificationRequestDto.getTime())
+                .isActivated(abstractBasicNotificationDto.getIsActivated())
+                .day(abstractBasicNotificationDto.getDay())
+                .time(abstractBasicNotificationDto.getTime())
                 .build();
     }
 }

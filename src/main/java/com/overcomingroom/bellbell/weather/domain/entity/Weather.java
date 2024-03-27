@@ -9,6 +9,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 @Entity
 @Builder(toBuilder = true)
 public class Weather {
@@ -19,7 +20,6 @@ public class Weather {
 
     @OneToOne
     @JoinColumn(name = "member_id")
-    @Setter
     private Member member;
     private String address;
     private String gridX;
@@ -27,7 +27,6 @@ public class Weather {
 
     @OneToOne
     @JoinColumn(name = "basic_notification_id")
-    @Setter
     private BasicNotification basicNotification;
 
     public static Weather toEntity(WeatherDto weatherDto) {

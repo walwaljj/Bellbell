@@ -1,11 +1,11 @@
 package com.overcomingroom.bellbell.weather.controller;
 
-import com.overcomingroom.bellbell.basicNotification.domain.dto.BasicNotificationRequestDto;
 import com.overcomingroom.bellbell.exception.CustomException;
 import com.overcomingroom.bellbell.exception.ErrorCode;
 import com.overcomingroom.bellbell.interceptor.AuthorizationInterceptor;
 import com.overcomingroom.bellbell.response.ResResult;
 import com.overcomingroom.bellbell.response.ResponseCode;
+import com.overcomingroom.bellbell.weather.domain.dto.WeatherInfoDto;
 import com.overcomingroom.bellbell.weather.service.WeatherService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,10 +20,9 @@ public class WeatherController {
 
     private final WeatherService weatherService;
 
-    @GetMapping("/weather")
-    public ResponseEntity<ResResult> weatherAndClothesInfo(
-            @RequestHeader("Authorization") String accessToken
-    ) {
+    @GetMapping("/weatherAndClothes")
+    public ResponseEntity<ResResult> weatherAndClothesInfo() {
+        String accessToken = AuthorizationInterceptor.getAccessToken();
         ResponseCode responseCode = ResponseCode.WEATHER_INFO_GET_SUCCESSFUL;
 
         return ResponseEntity.ok(
@@ -37,25 +36,19 @@ public class WeatherController {
 
     @PostMapping("/location")
     public ResponseEntity<ResResult> saveLocationWithAddress(
-            @RequestParam String address,
-            @RequestParam String day,
-            @RequestParam String time,
-            @RequestParam(defaultValue = "true") String isActivated
+            @RequestBody WeatherInfoDto weatherInfoDto
     ) {
-
         String accessToken = AuthorizationInterceptor.getAccessToken();
+
+                // 토큰이 없는 경우 예외 처리
         if (accessToken == null) {
-            // 토큰이 없는 경우 에러 처리
             throw new CustomException(ErrorCode.JWT_VALUE_IS_EMPTY);
         }
 
-        BasicNotificationRequestDto basicNotificationRequestDto = BasicNotificationRequestDto.builder()
-                .day(day)
-                .time(time)
-                .build();
         log.info("토큰 = {}", accessToken);
-        weatherService.saveLocationWithAddress(accessToken.substring(7), address, basicNotificationRequestDto);
-        ResponseCode responseCode = ResponseCode.MEMBER_LOCATION_SAVE_SUCCESSFUL;
+        weatherService.saveLocationWithAddress(accessToken.substring(7),
+            weatherInfoDto);
+        ResponseCode responseCode = ResponseCode.WEATHER_ACTIVATE_SUCCESSFUL;
 
         return ResponseEntity.ok(
                 ResResult.builder()
@@ -64,4 +57,24 @@ public class WeatherController {
                         .message(responseCode.getMessage())
                         .build());
     }
+
+    @GetMapping("/weather")
+    public ResponseEntity<ResResult> weatherInfo() {
+        String accessToken = AuthorizationInterceptor.getAccessToken();
+        // 토큰이 없는 경우 예외 처리
+        if (accessToken == null) {
+            throw new CustomException(ErrorCode.JWT_VALUE_IS_EMPTY);
+        }
+
+        ResponseCode responseCode = ResponseCode.WEATHER_INFO_GET_SUCCESSFUL;
+
+        return ResponseEntity.ok(
+            ResResult.builder()
+                .responseCode(responseCode)
+                .code(responseCode.getCode())
+                .message(responseCode.getMessage())
+                .data(weatherService.getWeatherInfo(accessToken.substring(7)))
+                .build());
+    }
+
 }
