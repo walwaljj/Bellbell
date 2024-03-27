@@ -19,8 +19,14 @@ public class BasicNotificationService {
 
     private final BasicNotificationRepository basicNotificationRepository;
 
-    public BasicNotification setNotification(BasicNotificationRequestDto basicNotificationRequestDto) {
+    public BasicNotification setNotification() {
+        return basicNotificationRepository.save(new BasicNotification());
+    }
+
+    public BasicNotification activeNotification(BasicNotificationRequestDto basicNotificationRequestDto) {
         BasicNotification basicNotification = BasicNotification.toEntity(basicNotificationRequestDto);
+        basicNotification.setActivated(basicNotificationRequestDto.isActivated());
         return basicNotificationRepository.save(basicNotification);
     }
+
 }

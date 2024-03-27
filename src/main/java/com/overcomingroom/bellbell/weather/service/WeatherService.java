@@ -60,17 +60,6 @@ public class WeatherService {
     private String baseDate;
 
 
-    // 위치 기 저장 여부 확인
-    private boolean chkLocationData(Member member) {
-
-        Optional<Weather> byMemberId = weatherRepository.findByMemberId(member.getId());
-
-        if (byMemberId.isPresent()) {
-            return true; // 저장 됨.
-        }
-        return false; // 저장 되지 않음.
-    }
-
     // 날씨 api 호출(초단기예보)
     private WeatherResponse callForecastApi(Weather location) {
 
@@ -193,24 +182,6 @@ public class WeatherService {
         restTemplate.setMessageConverters(messageConverters);
     }
 
-    // uri 에 필요한 code 를 반환하는 메서드
-    private String getCode(String gu, String responseBody, ErrorCode errorCode) {
-
-        JSONArray jsonArray = new JSONArray(responseBody);
-
-        for (int i = 0; i < jsonArray.length(); i++) {
-            JSONObject obj = jsonArray.getJSONObject(i);
-            String code = obj.getString("code");
-            String value = obj.getString("value");
-            if (value.equals(gu)) {
-                log.info("Code: " + code);
-                log.info("Value: " + value);
-                return code;
-            }
-        }
-
-        throw new CustomException(errorCode);
-    }
 
     // 옷차림 정보
     private String clothesRecommendation(float temp) {
@@ -256,11 +227,11 @@ public class WeatherService {
         gpsTransfer.transfer(lon, lat);
 
         // 알람 정보 생성
-        BasicNotification basicNotification = basicNotificationService.setNotification(basicNotificationRequestDto);
+        BasicNotification basicNotification = basicNotificationService.activeNotification(basicNotificationRequestDto);
 
         weatherRepository.save(Weather.toEntity(
                 WeatherDto.builder()
-                        .memberId(member.getId())
+                        .member(member)
                         .address(address)
                         .gridX(String.valueOf(gpsTransfer.getX()))
                         .gridY(String.valueOf(gpsTransfer.getY()))
@@ -316,5 +287,20 @@ public class WeatherService {
         }
 
         return new WeatherResponse(weatherInfo);
+    }
+
+    // 날씨 알림 생성
+    public void setWeather(Member member) {
+        weatherRepository.save(Weather.toEntity(
+            WeatherDto.builder()
+                .member(member)
+                .basicNotification(basicNotificationService.setNotification())
+                .build())
+        );
+    }
+
+    // 날씨 알림 정보 가져오기
+    public Optional<Weather> getWeather(Long memberId) {
+        return weatherRepository.findByMemberId(memberId);
     }
 }

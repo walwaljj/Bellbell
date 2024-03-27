@@ -52,7 +52,6 @@ public class WeatherController {
         BasicNotificationRequestDto basicNotificationRequestDto = BasicNotificationRequestDto.builder()
                 .day(day)
                 .time(time)
-                .isActivated(Boolean.valueOf(isActivated))
                 .build();
         log.info("토큰 = {}", accessToken);
         weatherService.saveLocationWithAddress(accessToken.substring(7), address, basicNotificationRequestDto);

@@ -7,6 +7,7 @@ import com.overcomingroom.bellbell.member.domain.entity.Member;
 import com.overcomingroom.bellbell.member.domain.service.MemberService;
 import com.overcomingroom.bellbell.oauth.dto.TokenResponse;
 import com.overcomingroom.bellbell.oauth.repository.RedisRepository;
+import com.overcomingroom.bellbell.weather.service.WeatherService;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class OAuthService {
 
   private final MemberService memberService;
   private final RedisRepository redisRepository;
+  private final WeatherService weatherService;
 
   @Value("${spring.security.oauth2.client.registration.kakao.client-id}")
   private String clientId;
@@ -77,6 +79,11 @@ public class OAuthService {
     Long memberId =
         member.isEmpty() ? memberService.saveMember(kakaoUserInfo).getId() : member.get()
             .getId();
+
+    // 기본 알림 생성 (현재 날씨 알림만 생성)
+    if (member.isEmpty() || weatherService.getWeather(memberId).isEmpty()) {
+      weatherService.setWeather(memberService.getMember(accessToken));
+    }
 
     // Redis 에 토큰 저장
     redisRepository.saveToken(memberId.toString(), accessToken, refreshToken);

@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Builder
@@ -20,13 +21,15 @@ public class BasicNotification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private boolean isActivated;
+
+    @Builder.Default
+    @Setter
+    private boolean isActivated = false;
     private String day;
     private String time;
 
     public static BasicNotification toEntity(BasicNotificationRequestDto basicNotificationRequestDto) {
         return BasicNotification.builder()
-                .isActivated(basicNotificationRequestDto.isActivated())
                 .day(basicNotificationRequestDto.getDay())
                 .time(basicNotificationRequestDto.getTime())
                 .build();

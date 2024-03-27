@@ -1,6 +1,7 @@
 package com.overcomingroom.bellbell.weather.domain.entity;
 
 import com.overcomingroom.bellbell.basicNotification.domain.entity.BasicNotification;
+import com.overcomingroom.bellbell.member.domain.entity.Member;
 import com.overcomingroom.bellbell.weather.domain.dto.WeatherDto;
 import jakarta.persistence.*;
 import lombok.*;
@@ -15,7 +16,11 @@ public class Weather {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long memberId;
+
+    @OneToOne
+    @JoinColumn(name = "member_id")
+    @Setter
+    private Member member;
     private String address;
     private String gridX;
     private String gridY;
@@ -28,7 +33,7 @@ public class Weather {
     public static Weather toEntity(WeatherDto weatherDto) {
         return Weather.builder()
                 .basicNotification(weatherDto.getBasicNotification())
-                .memberId(weatherDto.getMemberId())
+                .member(weatherDto.getMember())
                 .address(weatherDto.getAddress())
                 .gridX(weatherDto.getGridX())
                 .gridY(weatherDto.getGridY())
