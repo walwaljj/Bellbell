@@ -1,6 +1,9 @@
 package com.overcomingroom.bellbell.weather.controller;
 
 import com.overcomingroom.bellbell.basicNotification.domain.dto.BasicNotificationRequestDto;
+import com.overcomingroom.bellbell.exception.CustomException;
+import com.overcomingroom.bellbell.exception.ErrorCode;
+import com.overcomingroom.bellbell.interceptor.AuthorizationInterceptor;
 import com.overcomingroom.bellbell.response.ResResult;
 import com.overcomingroom.bellbell.response.ResponseCode;
 import com.overcomingroom.bellbell.weather.service.WeatherService;
@@ -34,19 +37,24 @@ public class WeatherController {
 
     @PostMapping("/location")
     public ResponseEntity<ResResult> saveLocationWithAddress(
-            @RequestHeader("Authorization") String accessToken,
             @RequestParam String address,
             @RequestParam String day,
             @RequestParam String time,
             @RequestParam(defaultValue = "true") String isActivated
     ) {
 
+        String accessToken = AuthorizationInterceptor.getAccessToken();
+        if (accessToken == null) {
+            // 토큰이 없는 경우 에러 처리
+            throw new CustomException(ErrorCode.JWT_VALUE_IS_EMPTY);
+        }
+
         BasicNotificationRequestDto basicNotificationRequestDto = BasicNotificationRequestDto.builder()
                 .day(day)
                 .time(time)
                 .isActivated(Boolean.valueOf(isActivated))
                 .build();
-
+        log.info("토큰 = {}", accessToken);
         weatherService.saveLocationWithAddress(accessToken.substring(7), address, basicNotificationRequestDto);
         ResponseCode responseCode = ResponseCode.MEMBER_LOCATION_SAVE_SUCCESSFUL;
 
