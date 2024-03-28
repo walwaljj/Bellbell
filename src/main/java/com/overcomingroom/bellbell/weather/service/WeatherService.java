@@ -1,6 +1,5 @@
 package com.overcomingroom.bellbell.weather.service;
 
-import com.overcomingroom.bellbell.basicNotification.domain.dto.BasicNotificationRequestDto;
 import com.overcomingroom.bellbell.basicNotification.domain.entity.BasicNotification;
 import com.overcomingroom.bellbell.basicNotification.service.BasicNotificationService;
 import com.overcomingroom.bellbell.exception.CustomException;
@@ -11,6 +10,7 @@ import com.overcomingroom.bellbell.weather.domain.CategoryType;
 import com.overcomingroom.bellbell.weather.domain.dto.GpsTransfer;
 import com.overcomingroom.bellbell.weather.domain.dto.WeatherAndClothesDto;
 import com.overcomingroom.bellbell.weather.domain.dto.WeatherDto;
+import com.overcomingroom.bellbell.weather.domain.dto.WeatherInfoDto;
 import com.overcomingroom.bellbell.weather.domain.dto.WeatherResponse;
 import com.overcomingroom.bellbell.weather.domain.entity.Weather;
 import com.overcomingroom.bellbell.weather.repository.WeatherRepository;
@@ -59,17 +59,6 @@ public class WeatherService {
     private String baseTime;
     private String baseDate;
 
-
-    // 위치 기 저장 여부 확인
-    private boolean chkLocationData(Member member) {
-
-        Optional<Weather> byMemberId = weatherRepository.findByMemberId(member.getId());
-
-        if (byMemberId.isPresent()) {
-            return true; // 저장 됨.
-        }
-        return false; // 저장 되지 않음.
-    }
 
     // 날씨 api 호출(초단기예보)
     private WeatherResponse callForecastApi(Weather location) {
@@ -193,24 +182,6 @@ public class WeatherService {
         restTemplate.setMessageConverters(messageConverters);
     }
 
-    // uri 에 필요한 code 를 반환하는 메서드
-    private String getCode(String gu, String responseBody, ErrorCode errorCode) {
-
-        JSONArray jsonArray = new JSONArray(responseBody);
-
-        for (int i = 0; i < jsonArray.length(); i++) {
-            JSONObject obj = jsonArray.getJSONObject(i);
-            String code = obj.getString("code");
-            String value = obj.getString("value");
-            if (value.equals(gu)) {
-                log.info("Code: " + code);
-                log.info("Value: " + value);
-                return code;
-            }
-        }
-
-        throw new CustomException(errorCode);
-    }
 
     // 옷차림 정보
     private String clothesRecommendation(float temp) {
@@ -234,15 +205,17 @@ public class WeatherService {
         }
     }
 
-    // 클라이언트에서 전달받은 주소로 경위도를 가져와 기상청 xy 좌표로 변환 후 위치를 저장
-    public void saveLocationWithAddress(String accessToken, String address, BasicNotificationRequestDto basicNotificationRequestDto) {
+    // 클라이언트에서 전달받은 주소로 경위도를 가져와 기상청 xy 좌표로 변환 후 위치를 저장 후 날씨 알림 활성화
+    public void activeWeather(String accessToken, WeatherInfoDto weatherInfoDto) {
+        log.info(weatherInfoDto.toString());
+
         Member member = memberService.getMember(accessToken);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         headers.set("Authorization", "KakaoAK " + clientId);
         RequestEntity<?> requestEntity = RequestEntity.get(
-                        "https://dapi.kakao.com/v2/local/search/address.json?query=" + address).headers(headers)
+                        "https://dapi.kakao.com/v2/local/search/address.json?query=" + weatherInfoDto.getAddress()).headers(headers)
                 .build();
 
         RestTemplate restTemplate = new RestTemplate();
@@ -255,18 +228,15 @@ public class WeatherService {
         GpsTransfer gpsTransfer = new GpsTransfer();
         gpsTransfer.transfer(lon, lat);
 
-        // 알람 정보 생성
-        BasicNotification basicNotification = basicNotificationService.setNotification(basicNotificationRequestDto);
+        // 알림 정보 생성
+        Weather weather = weatherRepository.findByMemberId(member.getId()).orElseThrow(() -> new CustomException(ErrorCode.WEATHER_API_RES_RESULT_IS_EMPTY));
+        BasicNotification basicNotification = basicNotificationService.activeNotification(weather.getBasicNotification().getId(), weatherInfoDto);
+        weather.setAddress(weatherInfoDto.getAddress());
+        weather.setGridX(String.valueOf(gpsTransfer.getX()));
+        weather.setGridY(String.valueOf(gpsTransfer.getY()));
+        weather.setBasicNotification(basicNotification);
 
-        weatherRepository.save(Weather.toEntity(
-                WeatherDto.builder()
-                        .memberId(member.getId())
-                        .address(address)
-                        .gridX(String.valueOf(gpsTransfer.getX()))
-                        .gridY(String.valueOf(gpsTransfer.getY()))
-                        .basicNotification(basicNotification)
-                        .build())
-        );
+        weatherRepository.save(weather);
     }
 
     // 날씨 api 호출(초단기실황)
@@ -316,5 +286,33 @@ public class WeatherService {
         }
 
         return new WeatherResponse(weatherInfo);
+    }
+
+    // 날씨 알림 생성
+    public void setWeather(Member member) {
+        weatherRepository.save(Weather.toEntity(
+            WeatherDto.builder()
+                .member(member)
+                .basicNotification(basicNotificationService.setNotification())
+                .build())
+        );
+    }
+
+    // 날씨 알림 가져오기
+    public Optional<Weather> getWeather(String accessToken) {
+        return weatherRepository.findByMemberId(memberService.getMember(accessToken).getId());
+    }
+
+    // 날씨 알림 정보 가져오기
+    public WeatherInfoDto getWeatherInfo(String accessToken) {
+        Weather weather = getWeather(accessToken).orElseThrow(() -> new CustomException(ErrorCode.WEATHER_API_RES_RESULT_IS_EMPTY));
+        BasicNotification basicNotification = basicNotificationService.getNotification(weather.getBasicNotification().getId()).orElseThrow(() -> new CustomException(ErrorCode.BASIC_NOTIFICATION_IS_EMPTY));
+
+        return WeatherInfoDto.builder()
+            .address(weather.getAddress())
+            .isActivated(basicNotification.getIsActivated())
+            .day(basicNotification.getDay())
+            .time(basicNotification.getTime())
+            .build();
     }
 }

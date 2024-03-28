@@ -1,8 +1,12 @@
 package com.overcomingroom.bellbell.basicNotification.service;
 
-import com.overcomingroom.bellbell.basicNotification.domain.dto.BasicNotificationRequestDto;
+import com.overcomingroom.bellbell.basicNotification.domain.dto.AbstractBasicNotificationDto;
 import com.overcomingroom.bellbell.basicNotification.domain.entity.BasicNotification;
 import com.overcomingroom.bellbell.basicNotification.repository.BasicNotificationRepository;
+import com.overcomingroom.bellbell.exception.CustomException;
+import com.overcomingroom.bellbell.exception.ErrorCode;
+import com.overcomingroom.bellbell.weather.domain.dto.WeatherInfoDto;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,8 +23,21 @@ public class BasicNotificationService {
 
     private final BasicNotificationRepository basicNotificationRepository;
 
-    public BasicNotification setNotification(BasicNotificationRequestDto basicNotificationRequestDto) {
-        BasicNotification basicNotification = BasicNotification.toEntity(basicNotificationRequestDto);
+    public BasicNotification setNotification() {
+        return basicNotificationRepository.save(new BasicNotification());
+    }
+
+    public BasicNotification activeNotification(Long basicNotificationId, AbstractBasicNotificationDto basicNotificationDto) {
+        BasicNotification basicNotification = basicNotificationRepository.findById(basicNotificationId).orElseThrow(() -> new CustomException(
+            ErrorCode.BASIC_NOTIFICATION_IS_EMPTY));
+        basicNotification.setIsActivated(basicNotificationDto.getIsActivated());
+        basicNotification.setDay(basicNotificationDto.getDay());
+        basicNotification.setTime(basicNotificationDto.getTime());
         return basicNotificationRepository.save(basicNotification);
     }
+
+    public Optional<BasicNotification> getNotification(Long id) {
+        return basicNotificationRepository.findById(id);
+    }
+
 }

@@ -24,7 +24,10 @@ public enum ErrorCode {
     NOT_EXISTS_USER_NOTIFICATION(HttpStatus.BAD_REQUEST, "사용자 알림이 존재하지 않습니다."),
 
     // Auth
-    JWT_VALUE_IS_EMPTY(HttpStatus.UNAUTHORIZED, "JWT를 요청 헤더에 넣어주세요.");
+    JWT_VALUE_IS_EMPTY(HttpStatus.UNAUTHORIZED, "JWT를 요청 헤더에 넣어주세요."),
+
+    // BasicNotification
+    BASIC_NOTIFICATION_IS_EMPTY(HttpStatus.NOT_FOUND, "기본 알림 데이터가 존재하지 않습니다.");
 
     private final HttpStatus status;
     private final String msg;

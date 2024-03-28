@@ -1,6 +1,7 @@
 package com.overcomingroom.bellbell.weather.domain.dto;
 
 import com.overcomingroom.bellbell.basicNotification.domain.entity.BasicNotification;
+import com.overcomingroom.bellbell.member.domain.entity.Member;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,7 +10,8 @@ import lombok.Setter;
 @Builder
 public class WeatherDto {
 
-    private Long memberId;
+    @Setter
+    private Member member;
 
     @Setter
     private BasicNotification basicNotification;
