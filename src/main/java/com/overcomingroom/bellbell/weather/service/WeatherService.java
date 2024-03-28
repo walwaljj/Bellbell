@@ -205,8 +205,8 @@ public class WeatherService {
         }
     }
 
-    // 클라이언트에서 전달받은 주소로 경위도를 가져와 기상청 xy 좌표로 변환 후 위치를 저장
-    public void saveLocationWithAddress(String accessToken, WeatherInfoDto weatherInfoDto) {
+    // 클라이언트에서 전달받은 주소로 경위도를 가져와 기상청 xy 좌표로 변환 후 위치를 저장 후 날씨 알림 활성화
+    public void activeWeather(String accessToken, WeatherInfoDto weatherInfoDto) {
         log.info(weatherInfoDto.toString());
 
         Member member = memberService.getMember(accessToken);
@@ -228,7 +228,7 @@ public class WeatherService {
         GpsTransfer gpsTransfer = new GpsTransfer();
         gpsTransfer.transfer(lon, lat);
 
-        // 알람 정보 생성
+        // 알림 정보 생성
         Weather weather = weatherRepository.findByMemberId(member.getId()).orElseThrow(() -> new CustomException(ErrorCode.WEATHER_API_RES_RESULT_IS_EMPTY));
         BasicNotification basicNotification = basicNotificationService.activeNotification(weather.getBasicNotification().getId(), weatherInfoDto);
         weather.setAddress(weatherInfoDto.getAddress());

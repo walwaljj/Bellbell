@@ -34,8 +34,8 @@ public class WeatherController {
                         .build());
     }
 
-    @PostMapping("/location")
-    public ResponseEntity<ResResult> saveLocationWithAddress(
+    @PostMapping("/weather")
+    public ResponseEntity<ResResult> activateWeather(
             @RequestBody WeatherInfoDto weatherInfoDto
     ) {
         String accessToken = AuthorizationInterceptor.getAccessToken();
@@ -46,7 +46,7 @@ public class WeatherController {
         }
 
         log.info("토큰 = {}", accessToken);
-        weatherService.saveLocationWithAddress(accessToken.substring(7),
+        weatherService.activeWeather(accessToken.substring(7),
             weatherInfoDto);
         ResponseCode responseCode = ResponseCode.WEATHER_ACTIVATE_SUCCESSFUL;
 
