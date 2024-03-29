@@ -1,12 +1,12 @@
 package com.overcomingroom.bellbell.weather.controller;
 
-import com.overcomingroom.bellbell.exception.CustomException;
-import com.overcomingroom.bellbell.exception.ErrorCode;
-import com.overcomingroom.bellbell.interceptor.AuthorizationInterceptor;
+import com.overcomingroom.bellbell.resolver.Login;
+import com.overcomingroom.bellbell.resolver.LoginUser;
 import com.overcomingroom.bellbell.response.ResResult;
 import com.overcomingroom.bellbell.response.ResponseCode;
 import com.overcomingroom.bellbell.weather.domain.dto.WeatherInfoDto;
 import com.overcomingroom.bellbell.weather.service.WeatherService;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +21,8 @@ public class WeatherController {
     private final WeatherService weatherService;
 
     @GetMapping("/weatherAndClothes")
-    public ResponseEntity<ResResult> weatherAndClothesInfo() {
-        String accessToken = AuthorizationInterceptor.getAccessToken();
+    public ResponseEntity<ResResult> weatherAndClothesInfo(@Parameter(hidden = true) @Login LoginUser loginUser) {
+
         ResponseCode responseCode = ResponseCode.WEATHER_INFO_GET_SUCCESSFUL;
 
         return ResponseEntity.ok(
@@ -30,24 +30,17 @@ public class WeatherController {
                         .responseCode(responseCode)
                         .code(responseCode.getCode())
                         .message(responseCode.getMessage())
-                        .data(weatherService.weatherAndClothesInfo(accessToken.substring(7)))
+                        .data(weatherService.weatherAndClothesInfo(loginUser.getAccessToken()))
                         .build());
     }
 
     @PostMapping("/weather")
     public ResponseEntity<ResResult> activateWeather(
+            @Parameter(hidden = true) @Login LoginUser loginUser,
             @RequestBody WeatherInfoDto weatherInfoDto
     ) {
-        String accessToken = AuthorizationInterceptor.getAccessToken();
 
-                // 토큰이 없는 경우 예외 처리
-        if (accessToken == null) {
-            throw new CustomException(ErrorCode.JWT_VALUE_IS_EMPTY);
-        }
-
-        log.info("토큰 = {}", accessToken);
-        weatherService.activeWeather(accessToken.substring(7),
-            weatherInfoDto);
+        weatherService.activeWeather(loginUser.getAccessToken(), weatherInfoDto);
         ResponseCode responseCode = ResponseCode.WEATHER_ACTIVATE_SUCCESSFUL;
 
         return ResponseEntity.ok(
@@ -59,22 +52,17 @@ public class WeatherController {
     }
 
     @GetMapping("/weather")
-    public ResponseEntity<ResResult> weatherInfo() {
-        String accessToken = AuthorizationInterceptor.getAccessToken();
-        // 토큰이 없는 경우 예외 처리
-        if (accessToken == null) {
-            throw new CustomException(ErrorCode.JWT_VALUE_IS_EMPTY);
-        }
+    public ResponseEntity<ResResult> weatherInfo(@Parameter(hidden = true) @Login LoginUser loginUser) {
 
         ResponseCode responseCode = ResponseCode.WEATHER_INFO_GET_SUCCESSFUL;
 
         return ResponseEntity.ok(
-            ResResult.builder()
-                .responseCode(responseCode)
-                .code(responseCode.getCode())
-                .message(responseCode.getMessage())
-                .data(weatherService.getWeatherInfo(accessToken.substring(7)))
-                .build());
+                ResResult.builder()
+                        .responseCode(responseCode)
+                        .code(responseCode.getCode())
+                        .message(responseCode.getMessage())
+                        .data(weatherService.getWeatherInfo(loginUser.getAccessToken()))
+                        .build());
     }
 
 }
