@@ -59,25 +59,9 @@ public class WeatherService {
     private String baseTime;
     private String baseDate;
 
-
     // 날씨 api 호출(초단기예보)
     private WeatherResponse callForecastApi(Weather location) {
 
-        LocalDateTime now = LocalDateTime.now();
-        int minute = now.getMinute();
-
-        if (minute < 30) {
-            now = now.minusHours(1);
-            baseTime = String.format("%02d%02d", now.getHour(), 0);
-        } else {
-            baseTime = String.format("%02d%02d", now.getHour(), 30);
-        }
-
-        if (now.getHour() == 0) {
-            baseDate = now.minusDays(1).toLocalDate().toString().replaceAll("-", "");
-        } else {
-            baseDate = now.toLocalDate().toString().replaceAll("-", "");
-        }
         String numOfRows = "100";
         String pageNo = "1";
         String dataType = "json";
@@ -126,6 +110,7 @@ public class WeatherService {
         Weather weather = findLocationByMember(member);
 
         // 3. 날씨 api 호출
+        setDateAndTime(); // 날짜, 시간 세팅
         WeatherResponse weatherResponse = callForecastApi(weather);  // 초단기예보
         WeatherResponse weatherResponse2 = getUltraSrtNcst(weather); // 초단기실황
 
@@ -151,6 +136,7 @@ public class WeatherService {
                 .clothes(clothesRecommendation(temp))
                 .now(LocalTime.now())
                 .weather(sky)
+                .location(weather.getAddress())
                 .baseTime(baseTime)
                 .fcstDate(baseDate)
                 .build();
@@ -230,26 +216,19 @@ public class WeatherService {
 
         // 알림 정보 생성
         Weather weather = weatherRepository.findByMemberId(member.getId()).orElseThrow(() -> new CustomException(ErrorCode.WEATHER_API_RES_RESULT_IS_EMPTY));
-        BasicNotification basicNotification = basicNotificationService.activeNotification(weather.getBasicNotification().getId(), weatherInfoDto);
+
         weather.setAddress(weatherInfoDto.getAddress());
         weather.setGridX(String.valueOf(gpsTransfer.getX()));
         weather.setGridY(String.valueOf(gpsTransfer.getY()));
-        weather.setBasicNotification(basicNotification);
 
+        String className = weather.getClass().getName().toString();
+        weather.setBasicNotification(basicNotificationService.activeNotification(className, accessToken, weather.getBasicNotification(), weatherInfoDto));
         weatherRepository.save(weather);
     }
 
     // 날씨 api 호출(초단기실황)
     private WeatherResponse getUltraSrtNcst(Weather location) {
 
-        LocalDateTime now = LocalDateTime.now();
-        baseTime = String.format("%02d%02d", now.getHour(), 0);
-
-        if (now.getHour() == 0) {
-            baseDate = now.minusDays(1).toLocalDate().toString().replaceAll("-", "");
-        } else {
-            baseDate = now.toLocalDate().toString().replaceAll("-", "");
-        }
         String numOfRows = "100";
         String pageNo = "1";
         String dataType = "json";
@@ -288,13 +267,37 @@ public class WeatherService {
         return new WeatherResponse(weatherInfo);
     }
 
+    // api 호출 날짜, 시간을 세팅합니다.
+    private void setDateAndTime() {
+        LocalDateTime now = LocalDateTime.now();
+        int minute = now.getMinute();
+
+        if (minute < 30) {
+            now = now.minusHours(1);
+            baseTime = String.format("%02d%02d", now.getHour(), 0);
+        } else {
+            baseTime = String.format("%02d%02d", now.getHour(), 30);
+        }
+
+        if (now.getHour() == 0 && minute < 30) {
+            baseDate = now.minusDays(1).toLocalDate().toString().replaceAll("-", "");
+            baseTime = String.format("%02d%02d", 23, 30);
+        }
+        else {
+            baseDate = now.toLocalDate().toString().replaceAll("-", "");
+        }
+
+        log.info("baseDate = {}", baseDate);
+        log.info("baseTime = {}", baseTime);
+    }
+
     // 날씨 알림 생성
     public void setWeather(Member member) {
         weatherRepository.save(Weather.toEntity(
-            WeatherDto.builder()
-                .member(member)
-                .basicNotification(basicNotificationService.setNotification())
-                .build())
+                WeatherDto.builder()
+                        .member(member)
+                        .basicNotification(basicNotificationService.setNotification())
+                        .build())
         );
     }
 
@@ -309,10 +312,10 @@ public class WeatherService {
         BasicNotification basicNotification = basicNotificationService.getNotification(weather.getBasicNotification().getId()).orElseThrow(() -> new CustomException(ErrorCode.BASIC_NOTIFICATION_IS_EMPTY));
 
         return WeatherInfoDto.builder()
-            .address(weather.getAddress())
-            .isActivated(basicNotification.getIsActivated())
-            .day(basicNotification.getDay())
-            .time(basicNotification.getTime())
-            .build();
+                .address(weather.getAddress())
+                .isActivated(basicNotification.getIsActivated())
+                .day(basicNotification.getDay())
+                .time(basicNotification.getTime())
+                .build();
     }
 }
