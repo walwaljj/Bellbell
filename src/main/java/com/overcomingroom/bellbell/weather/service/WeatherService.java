@@ -6,6 +6,7 @@ import com.overcomingroom.bellbell.exception.CustomException;
 import com.overcomingroom.bellbell.exception.ErrorCode;
 import com.overcomingroom.bellbell.member.domain.entity.Member;
 import com.overcomingroom.bellbell.member.domain.service.MemberService;
+import com.overcomingroom.bellbell.schedule.CronExpression;
 import com.overcomingroom.bellbell.weather.domain.CategoryType;
 import com.overcomingroom.bellbell.weather.domain.dto.GpsTransfer;
 import com.overcomingroom.bellbell.weather.domain.dto.WeatherAndClothesDto;
@@ -22,6 +23,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -55,6 +58,8 @@ public class WeatherService {
     private final MemberService memberService;
 
     private final BasicNotificationService basicNotificationService;
+
+    private final TaskScheduler taskScheduler;
 
     private String baseTime;
     private String baseDate;
@@ -221,9 +226,18 @@ public class WeatherService {
         weather.setGridX(String.valueOf(gpsTransfer.getX()));
         weather.setGridY(String.valueOf(gpsTransfer.getY()));
 
-        String className = weather.getClass().getName().toString();
-        weather.setBasicNotification(basicNotificationService.activeNotification(className, accessToken, weather.getBasicNotification(), weatherInfoDto));
+        BasicNotification basicNotification = basicNotificationService.activeNotification(weather.getBasicNotification().getId(), weatherInfoDto);
+        weather.setBasicNotification(basicNotification);
+
         weatherRepository.save(weather);
+
+        // 알림 스케줄 생성
+        String day = basicNotification.getDay();
+        String[] time = basicNotification.getTime().split(":");
+        int hour = Integer.parseInt(time[0]);
+        int minute = Integer.parseInt(time[1]);
+
+        taskScheduler.schedule(() -> log.info("\n=========================Execution by scheduling!=========================\n {}", WeatherAndClothesDto.weatherAndClothesInfo(weatherAndClothesInfo(accessToken)) + "\n===================================END====================================\n"), new CronTrigger(new CronExpression(minute, hour, day).toString(), TimeZone.getTimeZone("Asia/Seoul")));
     }
 
     // 날씨 api 호출(초단기실황)
