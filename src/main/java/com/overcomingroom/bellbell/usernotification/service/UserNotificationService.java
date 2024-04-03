@@ -5,12 +5,11 @@ import com.overcomingroom.bellbell.exception.ErrorCode;
 import com.overcomingroom.bellbell.member.domain.entity.Member;
 import com.overcomingroom.bellbell.member.domain.service.MemberService;
 import com.overcomingroom.bellbell.response.ResponseCode;
+import com.overcomingroom.bellbell.schedule.CronExpression;
 import com.overcomingroom.bellbell.usernotification.domain.dto.UserNotificationRequestDto;
 import com.overcomingroom.bellbell.usernotification.domain.dto.UserNotificationResponseDto;
 import com.overcomingroom.bellbell.usernotification.domain.entity.UserNotification;
 import com.overcomingroom.bellbell.usernotification.repository.UserNotificationRepository;
-import com.overcomingroom.bellbell.weather.domain.dto.WeatherAndClothesDto;
-import com.overcomingroom.bellbell.weather.service.WeatherService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.TaskScheduler;
@@ -60,16 +59,7 @@ public class UserNotificationService {
     private void settingsSchedule(UserNotification userNotification) {
 
         // cronExpression
-        String cronExpression = "";
-
-        String dayOfWeek = userNotification.getDay();
-        String time = userNotification.getTime();
-        String[] split = time.split(":");
-        int hour = Integer.parseInt(split[0]);
-        int minute = Integer.parseInt(split[1]);
-
-        log.info("Updating cron expression: 0 {} {} ? * {}", minute, hour, dayOfWeek);
-        cronExpression = String.format("0 %d %d ? * %s", minute, hour, dayOfWeek);
+        String cronExpression = CronExpression.getCronExpression(userNotification.getDay(), userNotification.getTime());
 
         // 예약된 작업 실행
         taskScheduler.schedule(() -> {
