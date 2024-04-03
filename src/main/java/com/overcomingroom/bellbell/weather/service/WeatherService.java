@@ -8,11 +8,7 @@ import com.overcomingroom.bellbell.member.domain.entity.Member;
 import com.overcomingroom.bellbell.member.domain.service.MemberService;
 import com.overcomingroom.bellbell.schedule.CronExpression;
 import com.overcomingroom.bellbell.weather.domain.CategoryType;
-import com.overcomingroom.bellbell.weather.domain.dto.GpsTransfer;
-import com.overcomingroom.bellbell.weather.domain.dto.WeatherAndClothesDto;
-import com.overcomingroom.bellbell.weather.domain.dto.WeatherDto;
-import com.overcomingroom.bellbell.weather.domain.dto.WeatherInfoDto;
-import com.overcomingroom.bellbell.weather.domain.dto.WeatherResponse;
+import com.overcomingroom.bellbell.weather.domain.dto.*;
 import com.overcomingroom.bellbell.weather.domain.entity.Weather;
 import com.overcomingroom.bellbell.weather.repository.WeatherRepository;
 import lombok.RequiredArgsConstructor;
@@ -232,12 +228,8 @@ public class WeatherService {
         weatherRepository.save(weather);
 
         // 알림 스케줄 생성
-        String day = basicNotification.getDay();
-        String[] time = basicNotification.getTime().split(":");
-        int hour = Integer.parseInt(time[0]);
-        int minute = Integer.parseInt(time[1]);
-
-        taskScheduler.schedule(() -> log.info("\n=========================Execution by scheduling!=========================\n {}", WeatherAndClothesDto.weatherAndClothesInfo(weatherAndClothesInfo(accessToken)) + "\n===================================END====================================\n"), new CronTrigger(new CronExpression(minute, hour, day).toString(), TimeZone.getTimeZone("Asia/Seoul")));
+        String cronExpression = CronExpression.getCronExpression(basicNotification.getDay(), basicNotification.getTime());
+        taskScheduler.schedule(() -> log.info("\n=========================Execution by scheduling!=========================\n {}", WeatherAndClothesDto.weatherAndClothesInfo(weatherAndClothesInfo(accessToken)) + "\n===================================END====================================\n"), new CronTrigger(cronExpression, TimeZone.getTimeZone("Asia/Seoul")));
     }
 
     // 날씨 api 호출(초단기실황)
@@ -296,8 +288,7 @@ public class WeatherService {
         if (now.getHour() == 0 && minute < 30) {
             baseDate = now.minusDays(1).toLocalDate().toString().replaceAll("-", "");
             baseTime = String.format("%02d%02d", 23, 30);
-        }
-        else {
+        } else {
             baseDate = now.toLocalDate().toString().replaceAll("-", "");
         }
 
