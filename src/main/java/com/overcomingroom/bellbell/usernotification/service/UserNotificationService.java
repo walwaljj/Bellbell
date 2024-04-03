@@ -5,12 +5,11 @@ import com.overcomingroom.bellbell.exception.ErrorCode;
 import com.overcomingroom.bellbell.member.domain.entity.Member;
 import com.overcomingroom.bellbell.member.domain.service.MemberService;
 import com.overcomingroom.bellbell.response.ResponseCode;
+import com.overcomingroom.bellbell.schedule.CronExpression;
 import com.overcomingroom.bellbell.usernotification.domain.dto.UserNotificationRequestDto;
 import com.overcomingroom.bellbell.usernotification.domain.dto.UserNotificationResponseDto;
 import com.overcomingroom.bellbell.usernotification.domain.entity.UserNotification;
 import com.overcomingroom.bellbell.usernotification.repository.UserNotificationRepository;
-import com.overcomingroom.bellbell.weather.domain.dto.WeatherAndClothesDto;
-import com.overcomingroom.bellbell.weather.service.WeatherService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.TaskScheduler;
@@ -34,8 +33,6 @@ public class UserNotificationService {
     private final TaskScheduler taskScheduler;
     private final UserNotificationRepository userNotificationRepository;
     private final MemberService memberService;
-    private final WeatherService weatherService;
-
 
     /**
      * 사용자 알림을 생성하는 메서드입니다.
@@ -49,7 +46,7 @@ public class UserNotificationService {
         UserNotification userNotification = userNotificationRepository.save(new UserNotification(dto.getContent(), dto.getTime(), dto.getDay(), member));
 
         // 스케줄 설정 메소드
-        settingsSchedule(userNotification, accessToken);
+        settingsSchedule(userNotification);
 
         return ResponseCode.USER_NOTIFICATION_CREATE_SUCCESSFUL;
     }
@@ -58,33 +55,17 @@ public class UserNotificationService {
      * 사용자가 생성한 알림 정보를 토대로 스케줄을 설정합니다.
      *
      * @param userNotification 알림 서비스 정보
-     * @param accessToken           토큰
      */
-    private void settingsSchedule(UserNotification userNotification, String accessToken) {
+    private void settingsSchedule(UserNotification userNotification) {
 
         // cronExpression
-        String cronExpression = "";
-
-        String dayOfWeek = userNotification.getDay();
-        String time = userNotification.getTime();
-        String[] split = time.split(":");
-        int hour = Integer.parseInt(split[0]);
-        int minute = Integer.parseInt(split[1]);
-
-        log.info("Updating cron expression: 0 {} {} ? * {}", minute, hour, dayOfWeek);
-        cronExpression = String.format("0 %d %d ? * %s", minute, hour, dayOfWeek);
+        String cronExpression = CronExpression.getCronExpression(userNotification.getDay(), userNotification.getTime());
 
         // 예약된 작업 실행
         taskScheduler.schedule(() -> {
 
-            // task 실행부
-
-            // 만약 유저의 service 가 서비스값과 같다면 실행
-            switch (userNotification.getContent()) {
-                case "WEATHER_AND_CLOTHING":
-                    WeatherAndClothesDto weatherAndClothesDto = weatherService.weatherAndClothesInfo(accessToken);
-                    log.info("\n=========================Execution by scheduling!=========================\n {}", WeatherAndClothesDto.weatherAndClothesInfo(weatherAndClothesDto) + "\n===================================END====================================\n");
-            }
+            // 유저가 설정한 알림 컨텐츠를 반환함.
+            log.info(userNotification.getContent());
 
         }, new CronTrigger(cronExpression, TimeZone.getTimeZone("Asia/Seoul")));
     }

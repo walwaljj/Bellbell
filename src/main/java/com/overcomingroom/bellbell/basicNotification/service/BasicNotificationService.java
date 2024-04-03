@@ -5,12 +5,12 @@ import com.overcomingroom.bellbell.basicNotification.domain.entity.BasicNotifica
 import com.overcomingroom.bellbell.basicNotification.repository.BasicNotificationRepository;
 import com.overcomingroom.bellbell.exception.CustomException;
 import com.overcomingroom.bellbell.exception.ErrorCode;
-import com.overcomingroom.bellbell.weather.domain.dto.WeatherInfoDto;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 /**
  * 사용자 알림 서비스를 제공하는 클래스입니다.
@@ -23,6 +23,7 @@ public class BasicNotificationService {
 
     private final BasicNotificationRepository basicNotificationRepository;
 
+    // 초기 설정
     public BasicNotification setNotification() {
         return basicNotificationRepository.save(new BasicNotification());
     }
