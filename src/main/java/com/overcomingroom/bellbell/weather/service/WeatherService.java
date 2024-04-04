@@ -4,6 +4,7 @@ import com.overcomingroom.bellbell.basicNotification.domain.entity.BasicNotifica
 import com.overcomingroom.bellbell.basicNotification.service.BasicNotificationService;
 import com.overcomingroom.bellbell.exception.CustomException;
 import com.overcomingroom.bellbell.exception.ErrorCode;
+import com.overcomingroom.bellbell.kakaoMessage.service.CustomMessageService;
 import com.overcomingroom.bellbell.member.domain.entity.Member;
 import com.overcomingroom.bellbell.member.domain.service.MemberService;
 import com.overcomingroom.bellbell.schedule.CronExpression;
@@ -30,6 +31,7 @@ import java.nio.charset.Charset;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.ScheduledFuture;
 
 @Service
 @Transactional
@@ -53,10 +55,13 @@ public class WeatherService {
 
     private final MemberService memberService;
 
+    private ScheduledFuture<?> schedule;
+
     private final BasicNotificationService basicNotificationService;
 
     private final TaskScheduler taskScheduler;
 
+    private final CustomMessageService customMessageService;
     private String baseTime;
     private String baseDate;
 
@@ -227,9 +232,20 @@ public class WeatherService {
 
         weatherRepository.save(weather);
 
-        // 알림 스케줄 생성
-        String cronExpression = CronExpression.getCronExpression(basicNotification.getDay(), basicNotification.getTime());
-        taskScheduler.schedule(() -> log.info("\n=========================Execution by scheduling!=========================\n {}", WeatherAndClothesDto.weatherAndClothesInfo(weatherAndClothesInfo(accessToken)) + "\n===================================END====================================\n"), new CronTrigger(cronExpression, TimeZone.getTimeZone("Asia/Seoul")));
+        if (schedule != null) {
+            schedule.cancel(true);
+            this.schedule = null;
+            log.info("기존 기본 알림 스케줄을 취소 합니다.");
+        } else {
+            // 알림 스케줄 생성
+            String cronExpression = CronExpression.getCronExpression(basicNotification.getDay(), basicNotification.getTime());
+            schedule = taskScheduler.schedule(() -> {
+                        customMessageService.sendMessage(accessToken, WeatherAndClothesDto.weatherAndClothesInfo(weatherAndClothesInfo(accessToken)));
+                        log.info("기본 알림 스케줄 실행 완료.");
+                    }, new CronTrigger(cronExpression, TimeZone.getTimeZone("Asia/Seoul"))
+            );
+        }
+
     }
 
     // 날씨 api 호출(초단기실황)
