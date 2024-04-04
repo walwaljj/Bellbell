@@ -67,8 +67,6 @@ public class UserNotificationService {
         // cronExpression
         String cronExpression = CronExpression.getCronExpression(userNotification.getDay(), userNotification.getTime());
 
-        // 그니까.. userNotification id를 schedule id 랑 같게 한 다음 id 를 검증해서 null이 아니면 캔슬, null이면 실행으로?
-
         // 예약된 작업 실행
         ScheduledFuture<?> schedule = taskScheduler.schedule(() -> {
 
