@@ -27,7 +27,10 @@ public enum ErrorCode {
     JWT_VALUE_IS_EMPTY(HttpStatus.UNAUTHORIZED, "JWT를 요청 헤더에 넣어주세요."),
 
     // BasicNotification
-    BASIC_NOTIFICATION_IS_EMPTY(HttpStatus.NOT_FOUND, "기본 알림 데이터가 존재하지 않습니다.");
+    BASIC_NOTIFICATION_IS_EMPTY(HttpStatus.NOT_FOUND, "기본 알림 데이터가 존재하지 않습니다."),
+
+    // MESSAGE
+    MESSAGE_SENDING_FAILED(HttpStatus.BAD_REQUEST, "메시지 전송 실패");
 
     private final HttpStatus status;
     private final String msg;
