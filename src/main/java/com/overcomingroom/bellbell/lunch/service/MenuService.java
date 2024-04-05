@@ -55,4 +55,21 @@ public class MenuService {
         menuRepository.saveAll(menuList);
     }
 
+    // 랜덤으로 메뉴를 선정함.
+    public List<Menu> recommendMenus() {
+
+        // id의 처음 ~ 마지막 번호 까지 랜덤 정수 생성
+        Random random = new Random();
+        List<Menu> findAllMenu = menuRepository.findAll();
+        Long min = findAllMenu.get(0).getMenuId();
+        Long max = findAllMenu.get(findAllMenu.size() - 1).getMenuId();
+
+        // 메뉴 3가지 추천
+        List<Menu> menuList = new ArrayList<>();
+        for (int i = 1; i < 4; i++) {
+            Long randomNumber = random.nextLong(max - min + 1) + min;
+            menuList.add(menuRepository.findById(randomNumber).orElseThrow(() -> new CustomException(ErrorCode.FAILED_TO_GENERATE_RANDOM_NUMBER)));
+        }
+        return menuList;
+    }
 }
