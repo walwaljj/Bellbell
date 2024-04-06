@@ -19,6 +19,11 @@ public enum ErrorCode {
     API_CALL_BAD_REQUEST(HttpStatus.BAD_REQUEST, "잘못된 응답 형식입니다."),
     WEATHER_API_RES_RESULT_IS_EMPTY(HttpStatus.NOT_FOUND, "날씨 데이터가 존재하지 않습니다."),
 
+    // Parcel
+    NO_EXISTS_PARCEL_NOTIFICATION(HttpStatus.BAD_REQUEST, "택배 알림이 존재하지 않습니다."),
+    INVALID_PARCEL_TRACKING_INFO(HttpStatus.BAD_REQUEST, "운송장 정보가 유효하지 않습니다."),
+    PARCEL_SCHEDULE_RESISTER_FAIL(HttpStatus.BAD_REQUEST, "운송장 조회 스케줄 등록에 실패하였습니다."),
+
     // UserNotification
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "입력값이 유효하지 않습니다."),
     NOT_EXISTS_USER_NOTIFICATION(HttpStatus.BAD_REQUEST, "사용자 알림이 존재하지 않습니다."),

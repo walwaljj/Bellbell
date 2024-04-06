@@ -18,7 +18,11 @@ public enum ResponseCode {
   WEATHER_INFO_GET_SUCCESSFUL(HttpStatus.OK, "200" ,"날씨 정보 조회 성공" ),
   MEMBER_LOCATION_SAVE_SUCCESSFUL(HttpStatus.OK, "200" ,"위치 정보 저장 성공" ),
   WEATHER_ACTIVATE_SUCCESSFUL(HttpStatus.OK, "200", "날씨 알림 활성화 성공"),
-  WEATHER_UNACTIVATE_SUCCESSFUL(HttpStatus.OK, "200", "날씨 알림 비활성화 성공"),
+  WEATHER_INACTIVATE_SUCCESSFUL(HttpStatus.OK, "200", "날씨 알림 비활성화 성공"),
+
+  // Parcel
+  PARCEL_INFO_GET_SUCCESSFUL(HttpStatus.OK, "200", "택배 알림 목록 가져오기 성공"),
+  PARCEL_NOTIFICATION_CREATE_SUCCESSFUL(HttpStatus.OK, "200", "택배 알림 생성 성공"),
 
   // UserNotification
   USER_NOTIFICATION_CREATE_SUCCESSFUL(HttpStatus.OK, "200", "사용자 알림 생성 성공"),
