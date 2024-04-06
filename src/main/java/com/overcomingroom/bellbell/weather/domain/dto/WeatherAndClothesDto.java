@@ -1,5 +1,7 @@
 package com.overcomingroom.bellbell.weather.domain.dto;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -19,9 +21,15 @@ public class WeatherAndClothesDto {
 
     public static String weatherAndClothesInfo(WeatherAndClothesDto weatherAndClothesDto) {
         StringBuilder sb = new StringBuilder();
-        sb.append(weatherAndClothesDto.getFcstDate()).append(" ,")
-                .append(weatherAndClothesDto.getBaseTime()).append(" 기준 날씨 입니다.\n")
-                .append("현재 시각 : ").append(LocalTime.now()).append("\n")
+        String date = weatherAndClothesDto.getFcstDate().concat(weatherAndClothesDto.getBaseTime());
+        DateTimeFormatter inputFormat = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+        DateTimeFormatter outputFormat = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 HH시 mm분");
+        LocalDateTime dateTime = LocalDateTime.parse(date, inputFormat);
+        String outputDateStr = dateTime.format(outputFormat);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH시 mm분");
+
+        sb.append(outputDateStr).append(" 기준 날씨 입니다.\n")
+                .append("현재 시각 : ").append(LocalTime.now().format(formatter)).append("\n")
                 .append("우리 동네 <")
                 .append(weatherAndClothesDto.getLocation())
                 .append("> 의 ")

@@ -2,6 +2,7 @@ package com.overcomingroom.bellbell.member.domain.entity;
 
 import static jakarta.persistence.FetchType.LAZY;
 
+import com.overcomingroom.bellbell.parcel.domain.entity.Parcel;
 import com.overcomingroom.bellbell.usernotification.domain.entity.UserNotification;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -40,6 +41,10 @@ public class Member {
   // 사용자 생성 알림 (1:N)
   @OneToMany(fetch = LAZY, mappedBy = "member", orphanRemoval = true)
   private List<UserNotification> userNotifications = new ArrayList<>();
+
+  // 택배 알림 (1:N)
+  @OneToMany(fetch = LAZY, mappedBy = "member", orphanRemoval = true)
+  private List<Parcel> parcels = new ArrayList<>();
 
   @Builder
   public Member(String nickname, String email, List<UserNotification> userNotifications) {

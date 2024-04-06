@@ -26,4 +26,5 @@ public class UserNotificationRequestDto {
    */
   @NotBlank(message = "알림 시간은 필수 입력값입니다.")
   private String time;
+
 }
