@@ -2,6 +2,7 @@ package com.overcomingroom.bellbell.oauth.service;
 
 import com.overcomingroom.bellbell.exception.CustomException;
 import com.overcomingroom.bellbell.exception.ErrorCode;
+import com.overcomingroom.bellbell.lunch.service.LunchService;
 import com.overcomingroom.bellbell.member.domain.dto.KakaoUserInfo;
 import com.overcomingroom.bellbell.member.domain.entity.Member;
 import com.overcomingroom.bellbell.member.domain.service.MemberService;
@@ -30,6 +31,7 @@ public class OAuthService {
   private final MemberService memberService;
   private final RedisRepository redisRepository;
   private final WeatherService weatherService;
+  private final LunchService lunchService;
 
   @Value("${spring.security.oauth2.client.registration.kakao.client-id}")
   private String clientId;
@@ -77,12 +79,16 @@ public class OAuthService {
     Optional<Member> member = memberService.loadMember(kakaoUserInfo);
 
     Long memberId =
-        member.isEmpty() ? memberService.saveMember(kakaoUserInfo).getId() : member.get()
-            .getId();
+        member.isEmpty() ? memberService.saveMember(kakaoUserInfo).getId() : member.get().getId();
 
     // 기본 알림 생성 (현재 날씨 알림만 생성)
+    Member getMember = memberService.getMember(accessToken);
+
     if (member.isEmpty() || weatherService.getWeather(accessToken).isEmpty()) {
-      weatherService.setWeather(memberService.getMember(accessToken));
+      weatherService.setWeather(getMember);
+    }
+    if (lunchService.getLunchByMember(getMember).isEmpty()) {
+      lunchService.setLunch(getMember);
     }
 
     // Redis 에 토큰 저장

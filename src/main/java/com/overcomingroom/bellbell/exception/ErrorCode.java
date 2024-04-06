@@ -32,7 +32,14 @@ public enum ErrorCode {
     JWT_VALUE_IS_EMPTY(HttpStatus.UNAUTHORIZED, "JWT를 요청 헤더에 넣어주세요."),
 
     // BasicNotification
-    BASIC_NOTIFICATION_IS_EMPTY(HttpStatus.NOT_FOUND, "기본 알림 데이터가 존재하지 않습니다.");
+    BASIC_NOTIFICATION_IS_EMPTY(HttpStatus.NOT_FOUND, "기본 알림 데이터가 존재하지 않습니다."),
+  
+    // Lunch
+    FAILED_TO_GENERATE_RANDOM_NUMBER(HttpStatus.INTERNAL_SERVER_ERROR, "랜덤 수 생성 실패. 유효하지 않은 menuId 입니다."),
+    MEMBER_NOT_FOUND_IN_LUNCH(HttpStatus.BAD_REQUEST, "lunch 에서 멤버 정보를 찾을 수 없습니다."),
+
+    // MESSAGE
+    MESSAGE_SENDING_FAILED(HttpStatus.BAD_REQUEST, "메시지 전송 실패");
 
     private final HttpStatus status;
     private final String msg;
