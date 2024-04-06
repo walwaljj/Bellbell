@@ -7,6 +7,7 @@ import com.overcomingroom.bellbell.member.domain.entity.Member;
 import com.overcomingroom.bellbell.member.domain.service.MemberService;
 import com.overcomingroom.bellbell.response.ResponseCode;
 import com.overcomingroom.bellbell.schedule.CronExpression;
+import com.overcomingroom.bellbell.schedule.ScheduleType;
 import com.overcomingroom.bellbell.usernotification.domain.dto.UserNotificationRequestDto;
 import com.overcomingroom.bellbell.usernotification.domain.dto.UserNotificationResponseDto;
 import com.overcomingroom.bellbell.usernotification.domain.entity.UserNotification;
@@ -38,7 +39,7 @@ public class UserNotificationService {
     private final UserNotificationRepository userNotificationRepository;
     private final MemberService memberService;
     private final CustomMessageService customMessageService;
-    private Map<Long, ScheduledFuture<?>> scheduledFutureMap = new ConcurrentHashMap<>();
+    private final Map<String, ScheduledFuture<?>> scheduledFutureMap = new ConcurrentHashMap<>();
 
     /**
      * 사용자 알림을 생성하는 메서드입니다.
@@ -53,6 +54,15 @@ public class UserNotificationService {
 
         // 스케줄 설정 메소드
         settingsSchedule(userNotification, accessToken);
+
+        if (scheduledFutureMap.entrySet().isEmpty()) {
+            log.info("스케줄 목록이 비어있습니다.");
+        } else {
+            log.info("Schedule List");
+            for (Map.Entry<String, ScheduledFuture<?>> entry : scheduledFutureMap.entrySet()) {
+                log.info("Schedule ID: " + entry.getKey());
+            }
+        }
 
         return ResponseCode.USER_NOTIFICATION_CREATE_SUCCESSFUL;
     }
@@ -71,13 +81,13 @@ public class UserNotificationService {
         ScheduledFuture<?> schedule = taskScheduler.schedule(() -> {
 
             // 유저가 설정한 알림 컨텐츠를 반환함.
-            log.info("사용자 알림 = {}\n == END ==\n", userNotification.getContent());
+            log.info("사용자 생성 알림 = {}\n == END ==\n", userNotification.getContent());
             customMessageService.sendMessage(accessToken, userNotification.getContent());
-            log.info("기본 알림 스케줄 실행 완료.");
+            log.info("사용자 생성 알림 스케줄 실행 완료.");
 
         }, new CronTrigger(cronExpression, TimeZone.getTimeZone("Asia/Seoul")));
 
-        scheduledFutureMap.put(userNotification.getId(), schedule);
+        scheduledFutureMap.put(ScheduleType.USER.toString() + userNotification.getId(), schedule);
     }
 
     /**
@@ -119,11 +129,21 @@ public class UserNotificationService {
         }
         userNotificationRepository.delete(userNotification);
         // 스케줄도 캔슬하기
-        ScheduledFuture<?> scheduledFuture = scheduledFutureMap.get(notificationId);
+        String scheduleId = ScheduleType.USER.toString() + notificationId;
+        ScheduledFuture<?> scheduledFuture = scheduledFutureMap.get(scheduleId);
         if (scheduledFuture != null) {
             scheduledFuture.cancel(true);
-            log.info("\n사용자 스케줄 취소 완료\n notificationId = {}\n scheduledId = {}", notificationId, scheduledFutureMap.get(scheduledFuture));
-            scheduledFutureMap.remove(notificationId, scheduledFuture);
+            log.info("\n사용자 생성 알림 스케줄 취소 완료\n notificationId = {}\n scheduledId = {}", notificationId, scheduleId);
+            scheduledFutureMap.remove(scheduleId, scheduledFuture);
+        }
+
+        if (scheduledFutureMap.entrySet().isEmpty()) {
+            log.info("스케줄 목록이 비어있습니다.");
+        } else {
+            log.info("Schedule List");
+            for (Map.Entry<String, ScheduledFuture<?>> entry : scheduledFutureMap.entrySet()) {
+                log.info("Schedule ID: " + entry.getKey());
+            }
         }
         return ResponseCode.USER_NOTIFICATION_DELETE_SUCCESSFUL;
     }

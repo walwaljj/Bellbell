@@ -27,7 +27,11 @@ public enum ResponseCode {
   // UserNotification
   USER_NOTIFICATION_CREATE_SUCCESSFUL(HttpStatus.OK, "200", "사용자 알림 생성 성공"),
   USER_NOTIFICATIONS_GET_SUCCESSFUL(HttpStatus.OK, "200", "사용자 알림 목록 가져오기 성공"),
-  USER_NOTIFICATION_DELETE_SUCCESSFUL(HttpStatus.OK, "200", "사용자 알림 삭제 성공");
+  USER_NOTIFICATION_DELETE_SUCCESSFUL(HttpStatus.OK, "200", "사용자 알림 삭제 성공"),
+
+  // Lunch
+  LUNCH_ACTIVATE_SUCCESSFUL(HttpStatus.OK, "200", "점심 알림 활성화 성공"),
+  LUNCH_INFO_GET_SUCCESSFUL(HttpStatus.OK, "200", "점심 알림 가져오기 성공");
 
   private final HttpStatus httpStatus;
   private final String code;

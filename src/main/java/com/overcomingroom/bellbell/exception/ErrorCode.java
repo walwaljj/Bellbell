@@ -37,6 +37,7 @@ public enum ErrorCode {
     // Lunch
     FAILED_TO_GENERATE_RANDOM_NUMBER(HttpStatus.INTERNAL_SERVER_ERROR, "랜덤 수 생성 실패. 유효하지 않은 menuId 입니다."),
     MEMBER_NOT_FOUND_IN_LUNCH(HttpStatus.BAD_REQUEST, "lunch 에서 멤버 정보를 찾을 수 없습니다."),
+    NOT_EXISTS_LUNCH_INFO(HttpStatus.BAD_REQUEST, "lunch 정보가 존재하지 않습니다."),
 
     // MESSAGE
     MESSAGE_SENDING_FAILED(HttpStatus.BAD_REQUEST, "메시지 전송 실패");

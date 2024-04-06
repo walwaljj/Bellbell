@@ -9,6 +9,7 @@ import com.overcomingroom.bellbell.response.ResResult;
 import com.overcomingroom.bellbell.response.ResponseCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,5 +42,24 @@ public class LunchController {
                         .code(responseCode.getCode())
                         .message(responseCode.getMessage())
                         .build());
+    }
+
+    @GetMapping
+    public ResponseEntity<ResResult> lunchInfo() {
+        String accessToken = AuthorizationInterceptor.getAccessToken();
+        // 토큰이 없는 경우 예외 처리
+        if (accessToken == null) {
+            throw new CustomException(ErrorCode.JWT_VALUE_IS_EMPTY);
+        }
+
+        ResponseCode responseCode = ResponseCode.LUNCH_INFO_GET_SUCCESSFUL;
+
+        return ResponseEntity.ok(
+            ResResult.builder()
+                .responseCode(responseCode)
+                .code(responseCode.getCode())
+                .message(responseCode.getMessage())
+                .data(lunchService.getLunchInfo(accessToken.substring(7)))
+                .build());
     }
 }

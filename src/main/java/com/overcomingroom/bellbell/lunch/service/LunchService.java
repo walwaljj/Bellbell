@@ -94,4 +94,15 @@ public class LunchService {
                         .basicNotification(basicNotificationService.setNotification())
                         .build());
     }
+
+    public LunchResponseDto getLunchInfo(String accessToken) {
+        Lunch lunch = getLunchByMember(memberService.getMember(accessToken)).orElseThrow(() -> new CustomException(ErrorCode.NOT_EXISTS_LUNCH_INFO));
+        BasicNotification basicNotification = basicNotificationService.getNotification(lunch.getBasicNotification().getId()).orElseThrow(() -> new CustomException(ErrorCode.BASIC_NOTIFICATION_IS_EMPTY));
+
+        return LunchResponseDto.builder()
+            .isActivated(basicNotification.getIsActivated())
+            .day(basicNotification.getDay())
+            .time(basicNotification.getTime())
+            .build();
+    }
 }
