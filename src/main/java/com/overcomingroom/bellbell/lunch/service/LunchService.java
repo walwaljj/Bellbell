@@ -13,7 +13,7 @@ import com.overcomingroom.bellbell.lunch.repository.LunchRepository;
 import com.overcomingroom.bellbell.member.domain.entity.Member;
 import com.overcomingroom.bellbell.member.domain.service.MemberService;
 import com.overcomingroom.bellbell.schedule.CronExpression;
-import com.overcomingroom.bellbell.weather.domain.dto.WeatherAndClothesDto;
+import com.overcomingroom.bellbell.schedule.ScheduleType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.TaskScheduler;
@@ -21,8 +21,10 @@ import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 
 @Service
@@ -36,7 +38,7 @@ public class LunchService {
     private final BasicNotificationService basicNotificationService;
     private final TaskScheduler taskScheduler;
     private final CustomMessageService customMessageService;
-    private ScheduledFuture<?> schedule;
+    private final Map<String, ScheduledFuture<?>> scheduledFutureMap = new ConcurrentHashMap<>();
 
     /**
      * lunch service 를 활성 / 비활성 합니다.
@@ -57,24 +59,33 @@ public class LunchService {
         lunch.setBasicNotification(basicNotification);
         lunchRepository.save(lunch);
 
+        String scheduleId = ScheduleType.LUNCH.toString() + lunch.getId();
+        ScheduledFuture<?> scheduledFuture = scheduledFutureMap.get(scheduleId);
+
         // 알림 스케줄 생성
-        if (schedule != null) {
-            schedule.cancel(true);
-            this.schedule = null;
+        if (scheduledFuture != null) {
+            scheduledFuture.cancel(true);
             log.info("기존 기본 알림 스케줄을 취소 합니다.");
-        } else if (!basicNotification.getIsActivated()) {
-            this.schedule = null;
-            log.info(" {} 상태로 스케줄이 활성화 되지 않았습니다.", basicNotification.getIsActivated());
+            scheduledFutureMap.remove(scheduleId, scheduledFuture);
         } else {
             String cronExpression = CronExpression.getCronExpression(basicNotification.getDay(), basicNotification.getTime());
             log.info(" {} 상태로 스케줄이 활성화 되었습니다.", basicNotification.getIsActivated());
-            schedule = taskScheduler.schedule(() ->{
+            scheduledFuture = taskScheduler.schedule(() -> {
                         customMessageService.sendMessage(accessToken, lunchResponseDto.toString());
                         log.info("점심 메뉴 추천 스케줄 실행 완료.");
                     }
                     , new CronTrigger(cronExpression, TimeZone.getTimeZone("Asia/Seoul")));
+            scheduledFutureMap.put(scheduleId, scheduledFuture);
         }
 
+        if (scheduledFutureMap.entrySet().isEmpty()) {
+            log.info("스케줄 목록이 비어있습니다.");
+        } else {
+            log.info("Schedule List");
+            for (Map.Entry<String, ScheduledFuture<?>> entry : scheduledFutureMap.entrySet()) {
+                log.info("Schedule ID: " + entry.getKey());
+            }
+        }
     }
 
     /**
@@ -105,9 +116,9 @@ public class LunchService {
         BasicNotification basicNotification = basicNotificationService.getNotification(lunch.getBasicNotification().getId()).orElseThrow(() -> new CustomException(ErrorCode.BASIC_NOTIFICATION_IS_EMPTY));
 
         return LunchResponseDto.builder()
-            .isActivated(basicNotification.getIsActivated())
-            .day(basicNotification.getDay())
-            .time(basicNotification.getTime())
-            .build();
+                .isActivated(basicNotification.getIsActivated())
+                .day(basicNotification.getDay())
+                .time(basicNotification.getTime())
+                .build();
     }
 }
