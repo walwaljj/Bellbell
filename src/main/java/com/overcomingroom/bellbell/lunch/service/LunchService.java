@@ -4,6 +4,7 @@ import com.overcomingroom.bellbell.basicNotification.domain.entity.BasicNotifica
 import com.overcomingroom.bellbell.basicNotification.service.BasicNotificationService;
 import com.overcomingroom.bellbell.exception.CustomException;
 import com.overcomingroom.bellbell.exception.ErrorCode;
+import com.overcomingroom.bellbell.kakaoMessage.service.CustomMessageService;
 import com.overcomingroom.bellbell.lunch.domain.dto.LunchRequestDto;
 import com.overcomingroom.bellbell.lunch.domain.dto.LunchResponseDto;
 import com.overcomingroom.bellbell.lunch.domain.entity.Lunch;
@@ -12,6 +13,7 @@ import com.overcomingroom.bellbell.lunch.repository.LunchRepository;
 import com.overcomingroom.bellbell.member.domain.entity.Member;
 import com.overcomingroom.bellbell.member.domain.service.MemberService;
 import com.overcomingroom.bellbell.schedule.CronExpression;
+import com.overcomingroom.bellbell.weather.domain.dto.WeatherAndClothesDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.TaskScheduler;
@@ -33,6 +35,7 @@ public class LunchService {
     private final LunchRepository lunchRepository;
     private final BasicNotificationService basicNotificationService;
     private final TaskScheduler taskScheduler;
+    private final CustomMessageService customMessageService;
     private ScheduledFuture<?> schedule;
 
     /**
@@ -65,8 +68,10 @@ public class LunchService {
         } else {
             String cronExpression = CronExpression.getCronExpression(basicNotification.getDay(), basicNotification.getTime());
             log.info(" {} 상태로 스케줄이 활성화 되었습니다.", basicNotification.getIsActivated());
-            schedule = taskScheduler.schedule(() ->
-                            log.info(lunchResponseDto.toString())
+            schedule = taskScheduler.schedule(() ->{
+                        customMessageService.sendMessage(accessToken, lunchResponseDto.toString());
+                        log.info("점심 메뉴 추천 스케줄 실행 완료.");
+                    }
                     , new CronTrigger(cronExpression, TimeZone.getTimeZone("Asia/Seoul")));
         }
 
